@@ -1,0 +1,159 @@
+/*
+ * Agrofy UI Colors - Shadcn-inspired design system
+ * These colors are specifically for agrofy-ui components
+ * and won't conflict with Material UI styling
+ */
+
+@layer base {
+  :root {
+    /* Background colors */
+    --agrofyui-background: 0 0% 100%; /* white */
+    --agrofyui-foreground: 0 0% 3.9%; /* near black for text */
+
+    /* Card colors */
+    --agrofyui-card: 0 0% 100%; /* white background for cards */
+    --agrofyui-card-foreground: 0 0% 3.9%; /* dark text on cards */
+
+    /* Popover colors */
+    --agrofyui-popover: 0 0% 100%; /* white background for popovers */
+    --agrofyui-popover-foreground: 0 0% 3.9%; /* dark text in popovers */
+
+    /* Primary colors - using your existing primary color */
+    --agrofyui-primary-foreground: 0 0% 98%; /* white text on primary */
+
+    /* Secondary colors - using your existing secondary */
+    --agrofyui-secondary-foreground: 0 0% 9%; /* dark text on secondary */
+
+    /* Muted colors */
+    --agrofyui-muted-foreground: 0 0% 45.1%; /* muted gray text */
+
+    /* Accent colors */
+    --agrofyui-accent: 0 0% 96.1%; /* light gray accent background */
+    --agrofyui-accent-foreground: 0 0% 9%; /* dark text on accent */
+
+    /* Destructive/Error colors - using your existing error color */
+    --agrofyui-destructive-foreground: 0 0% 98%; /* white text on destructive */
+
+    /* Border and input */
+    --agrofyui-border: 0 0% 89.8%; /* light gray border */
+    --agrofyui-input: 0 0% 89.8%; /* light gray input border */
+    --agrofyui-ring: 0 0% 3.9%; /* focus ring color */
+  }
+
+  .dark {
+    /* Dark mode colors */
+    --agrofyui-background: 0 0% 3.9%; /* dark background */
+    --agrofyui-foreground: 0 0% 98%; /* light text */
+
+    /* Card colors in dark mode */
+    --agrofyui-card: 0 0% 3.9%; /* dark card background */
+    --agrofyui-card-foreground: 0 0% 98%; /* light text on cards */
+
+    /* Popover colors in dark mode */
+    --agrofyui-popover: 0 0% 3.9%; /* dark popover background */
+    --agrofyui-popover-foreground: 0 0% 98%; /* light text in popovers */
+
+    /* Primary in dark mode */
+    --agrofyui-primary-foreground: 0 0% 9%; /* dark text on primary */
+
+    /* Secondary in dark mode */
+    --agrofyui-secondary-foreground: 0 0% 98%; /* light text on secondary */
+
+    /* Muted in dark mode */
+    --agrofyui-muted-foreground: 0 0% 63.9%; /* lighter muted text */
+
+    /* Accent in dark mode */
+    --agrofyui-accent: 0 0% 14.9%; /* darker accent background */
+    --agrofyui-accent-foreground: 0 0% 98%; /* light text on accent */
+
+    /* Destructive in dark mode */
+    --agrofyui-destructive-foreground: 0 0% 98%; /* light text on destructive */
+
+    /* Border and input in dark mode */
+    --agrofyui-border: 0 0% 14.9%; /* darker border */
+    --agrofyui-input: 0 0% 14.9%; /* darker input border */
+    --agrofyui-ring: 0 0% 83.1%; /* lighter focus ring */
+  }
+}
+
+/* Utility classes for agrofy-ui components */
+@layer utilities {
+  /* Background colors */
+  .bg-background {
+    background-color: hsl(var(--agrofyui-background));
+  }
+
+  .bg-foreground {
+    background-color: hsl(var(--agrofyui-foreground));
+  }
+
+  .bg-card {
+    background-color: hsl(var(--agrofyui-card));
+  }
+
+  .bg-popover {
+    background-color: hsl(var(--agrofyui-popover));
+  }
+
+  .bg-accent {
+    background-color: hsl(var(--agrofyui-accent));
+  }
+
+  .bg-input {
+    background-color: hsl(var(--agrofyui-input));
+  }
+
+  .bg-primary-foreground {
+    background-color: hsl(var(--agrofyui-primary-foreground));
+  }
+
+  .bg-destructive {
+    background-color: var(--color-error);
+  }
+
+  /* Text colors */
+  .text-foreground {
+    color: hsl(var(--agrofyui-foreground));
+  }
+
+  .text-card-foreground {
+    color: hsl(var(--agrofyui-card-foreground));
+  }
+
+  .text-popover-foreground {
+    color: hsl(var(--agrofyui-popover-foreground));
+  }
+
+  .text-primary-foreground {
+    color: hsl(var(--agrofyui-primary-foreground));
+  }
+
+  .text-secondary-foreground {
+    color: hsl(var(--agrofyui-secondary-foreground));
+  }
+
+  .text-muted-foreground {
+    color: hsl(var(--agrofyui-muted-foreground));
+  }
+
+  .text-accent-foreground {
+    color: hsl(var(--agrofyui-accent-foreground));
+  }
+
+  .text-destructive {
+    color: var(--color-error);
+  }
+
+  /* Border colors */
+  .border-input {
+    border-color: hsl(var(--agrofyui-input));
+  }
+
+  .border-ring {
+    border-color: hsl(var(--agrofyui-ring));
+  }
+
+  .border-destructive {
+    border-color: var(--color-error);
+  }
+}
