@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors */
+    --color-primary: #5d87ff;
+    --color-primary-rgb: 93, 135, 255;
+    --color-secondary: #49beff;
+
+    /* Status Colors */
+    --color-success: #13deb9;
+    --color-warning: #ffae1f;
+    --color-error: #fa896b;
+    --color-info: #539bff;
+
+    /* Light Variants */
+    --color-lightprimary: #ecf2ff;
+    --color-lightsecondary: #e8f7ff;
+    --color-lightsuccess: #e6fffa;
+    --color-lightwarning: #fef5e5;
+    --color-lighterror: #fdede8;
+    --color-lightinfo: #ebf3fe;
+
+    /* Neutral Colors */
+    --color-border: #e5eaef;
+    --color-bordergray: #dfe5ef;
+    --color-lightgray: #f6f9fc;
+    --color-muted: #5a6a85;
+    --color-lighthover: #f6f9fc;
+    --color-surface-ld: #ffffff;
+    --color-bodytext: #2a3547;
+    --color-dark: #2a3547;
+
+    /* Emphasis Colors */
+    --color-primary-emphasis: #4570ea;
+    --color-secondary-emphasis: #23afdb;
+    --color-success-emphasis: #02b3a9;
+    --color-warning-emphasis: #e8910b;
+    --color-error-emphasis: #f3704d;
+    --color-info-emphasis: #1682d4;
+  }
+
+  .dark {
+    --color-surface-ld: #2a3547;
+    --color-bodytext: #ffffff;
+    --color-border: #333f55;
+    --color-muted: #dfe5ef;
+    --color-lighthover: #333f55;
+    --color-dark: #ffffff;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-surface text-bodytext;
+    font-family:
+      "Plus Jakarta Sans",
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+}
