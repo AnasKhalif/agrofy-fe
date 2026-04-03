@@ -1,8 +1,7 @@
-
-import { Card, Button } from 'src/shared/components/theme-ui';
-import  { useContext } from "react";
+import { Card, Button } from "src/shared/components/theme-ui";
+import { useContext } from "react";
 import { Icon } from "@iconify/react";
-import { CustomizerContext } from "src/app/providers";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import React from "react";
 
 interface TitleCardProps {
@@ -19,8 +18,7 @@ const TitleIconCard: React.FC<TitleCardProps> = ({
   title,
   onDownload,
 }) => {
-  const {  isCardShadow, isBorderRadius } =
-    useContext(CustomizerContext);
+  const { isCardShadow, isBorderRadius } = useContext(CustomizerContext);
 
   return (
     <Card

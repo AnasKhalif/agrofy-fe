@@ -1,11 +1,7 @@
-
-
-
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
-import { Card } from '@/shared/components/theme-ui';
-import  { useContext } from "react";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
+import { Card } from "@/shared/components/theme-ui";
+import { useContext } from "react";
 import React from "react";
-
 
 interface MyAppProps {
   children: React.ReactNode;
@@ -14,12 +10,14 @@ interface MyAppProps {
 const CardBox: React.FC<MyAppProps> = ({ children, className }) => {
   const { isCardShadow, isBorderRadius } = useContext(CustomizerContext);
   return (
-    <Card className={`card p-[30px]  ${className} ${isCardShadow ? ' shadow-md dark:shadow-none' : 'shadow-none border border-ld'} `}
+    <Card
+      className={`card p-[30px]  ${className} ${isCardShadow ? " shadow-md dark:shadow-none" : "shadow-none border border-ld"} `}
       style={{
         borderRadius: `${isBorderRadius}px`,
       }}
-    >{children}</Card>
+    >
+      {children}
+    </Card>
   );
-
 };
 export default CardBox;

@@ -1,6 +1,4 @@
-
-
-import Logo from "/src/assets/images/logos/logo.png";
+import Logo from "@/assets/images/logos/smartgrowth.png";
 import { Link } from "react-router";
 const FullLogo = () => {
   return (

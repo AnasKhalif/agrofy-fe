@@ -1,13 +1,12 @@
-
-import LogoIcon from '/src/assets/images/logos/logo.svg'
+import LogoIcon from "@/assets/images/logos/smartgrowth.png";
 import { Link } from "react-router";
 
-const Logo = ({className = ""}) => {
+const Logo = ({ className = "" }) => {
   return (
-   <Link to={'/'}>
-      <img src={LogoIcon} alt="logo" className={className}/>
+    <Link to={"/"}>
+      <img src={LogoIcon} alt="logo" className={className} />
     </Link>
-  )
-}
+  );
+};
 
-export default Logo
+export default Logo;

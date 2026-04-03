@@ -5,8 +5,11 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { AuthProvider } from "@/app/auth";
+import { CustomizerProvider, DashboardProvider } from "@/app/providers";
+import { ToastProvider } from "@/shared/contexts/ToastContext";
 import createAgrofyTheme from "@/shared/theme/muiTheme";
 import Spinner from "@/shared/components/common/Spinner";
+import "@/shared/utils/i18n"; // Initialize i18n
 import "./index.css";
 import "@/shared/styles/globals.css";
 import App from "./App";
@@ -29,12 +32,18 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AuthProvider>
-          <Suspense fallback={<Spinner />}>
-            <App />
-          </Suspense>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <CustomizerProvider>
+              <DashboardProvider>
+                <Suspense fallback={<Spinner />}>
+                  <App />
+                </Suspense>
+                <ReactQueryDevtools initialIsOpen={false} />
+              </DashboardProvider>
+            </CustomizerProvider>
+          </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

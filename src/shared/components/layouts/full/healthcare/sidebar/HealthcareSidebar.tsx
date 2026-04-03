@@ -2,6 +2,7 @@ import { FC, useEffect, useState, useMemo } from 'react';
 import { useLocation, NavLink } from 'react-router';
 import { Icon } from "@iconify/react";
 import SidebarContent from "@/app/router/SidebarItems";
+import LogoIcon from "@/assets/images/logos/smartgrowth.png";
 import NexDashboardSidebarContent from "@/app/router/NexDashboardSidebarItems";
 import { usePermission, useToast } from "@/shared/hooks";
 import { Button } from '@/shared/components/agrofy-ui/ui/button';
@@ -227,7 +228,7 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
       <div className="h-[64px] px-6 flex items-center border-b border-gray-200 dark:border-darkborder">
         <div className="flex items-center gap-2">
           <div className="flex items-center mr-[41px]">
-            <img src="/nex-healthcare-logo.svg" alt="Nex Healthcare" className="h-[38px] mr-[39px]" />
+            <img src={LogoIcon} alt="SmartGrowth" className="h-[38px] mr-[39px]" />
           </div>
         </div>
       </div>

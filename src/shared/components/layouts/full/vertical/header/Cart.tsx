@@ -1,10 +1,8 @@
-
-import  { useContext } from "react";
+import { useContext } from "react";
 import { Icon } from "@iconify/react";
-import { Drawer } from '@/shared/components/theme-ui';
-import { useBoolean } from '@/shared/hooks';
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
-
+import { Drawer } from "@/shared/components/theme-ui";
+import { useBoolean } from "@/shared/hooks";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 
 export const Cart = () => {
   const drawer = useBoolean();
@@ -25,8 +23,12 @@ export const Cart = () => {
           </span>
         </div>
       </div>
-      <Drawer open={drawer.value} onClose={handleClose} position={`${activeDir === "rtl" ? 'left' : 'right'}`} className="dark:bg-darkgray max-w-[350px] w-full">
-
+      <Drawer
+        open={drawer.value}
+        onClose={handleClose}
+        position={`${activeDir === "rtl" ? "left" : "right"}`}
+        className="dark:bg-darkgray max-w-[350px] w-full"
+      >
         <div className="border-ld  border-b">
           <div className="flex justify-between items-center p-4">
             <h5 className="text-xl">Shopping Cart</h5>

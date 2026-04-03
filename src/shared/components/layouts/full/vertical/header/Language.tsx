@@ -1,13 +1,11 @@
-
 import { useContext, useEffect } from "react";
-import { useTranslation } from 'react-i18next'
-import { Dropdown } from '@/shared/components/theme-ui';
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
-import engFlag from "/src/assets/images/flag/icon-flag-en.svg"
-import cnFlag from "/src/assets/images/flag/icon-flag-cn.svg"
-import frFlag from "/src/assets/images/flag/icon-flag-fr.svg"
-import saFlag from "/src/assets/images/flag/icon-flag-sa.svg"
-
+import { useTranslation } from "react-i18next";
+import { Dropdown } from "@/shared/components/theme-ui";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
+import engFlag from "@/assets/images/flag/icon-flag-en.svg";
+import cnFlag from "@/assets/images/flag/icon-flag-cn.svg";
+import frFlag from "@/assets/images/flag/icon-flag-fr.svg";
+import saFlag from "@/assets/images/flag/icon-flag-sa.svg";
 
 const Languages = [
   {
@@ -36,9 +34,7 @@ const Languages = [
 export const Language = () => {
   const { i18n } = useTranslation();
 
-  const {
-    isLanguage, setIsLanguage
-  } = useContext(CustomizerContext);
+  const { isLanguage, setIsLanguage } = useContext(CustomizerContext);
   const currentLang =
     Languages.find((_lang) => _lang.value === isLanguage) || Languages[1];
 
@@ -48,7 +44,7 @@ export const Language = () => {
 
   return (
     <>
-     <div className="relative group/menu">
+      <div className="relative group/menu">
         <Dropdown
           label=""
           className="w-56  rounded-sm"

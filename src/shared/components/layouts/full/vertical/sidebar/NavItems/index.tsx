@@ -1,13 +1,11 @@
 import React, { useContext } from "react";
 
-import { Sidebar } from '@/shared/components/theme-ui';
+import { Sidebar } from "@/shared/components/theme-ui";
 import { Icon } from "@iconify/react";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import { DashboardContext } from "@/app/providers/DashboardProvider";
+import { DashboardContext } from "@/app/contexts/DashboardContext";
 import { ChildItem } from "@/app/router/SidebarItems";
-
-
 
 interface NavItemsProps {
   item: ChildItem;
@@ -17,13 +15,13 @@ const NavItems: React.FC<NavItemsProps> = ({ item }) => {
   const pathname = location.pathname;
   const { t } = useTranslation();
 
-  const {setIsMobileSidebarOpen}  = useContext(DashboardContext);
+  const { setIsMobileSidebarOpen } = useContext(DashboardContext);
   return (
     <>
       <Sidebar.Item
         to={item.url}
         as={Link}
-        onClick = {() => setIsMobileSidebarOpen(false)}
+        onClick={() => setIsMobileSidebarOpen(false)}
         className={`${
           item.url == pathname
             ? "text-white bg-primary rounded-xl  hover:text-white hover:bg-primary dark:hover:text-white shadow-btnshdw active"
@@ -42,12 +40,10 @@ const NavItems: React.FC<NavItemsProps> = ({ item }) => {
               } `}
             ></span>
           )}
-          <span
-            className={`max-w-36 overflow-hidden text-[15px] leading-5`}
-          >
+          <span className={`max-w-36 overflow-hidden text-[15px] leading-5`}>
             {t(`${item.name}`)}
           </span>
-        </span> 
+        </span>
       </Sidebar.Item>
     </>
   );

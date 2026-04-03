@@ -1,18 +1,17 @@
-
-import  { useContext } from "react";
-import { Sidebar } from '@/shared/components/theme-ui';
+import { useContext } from "react";
+import { Sidebar } from "@/shared/components/theme-ui";
 import { IconSidebar } from "./IconSidebar";
 import SidebarContent from "@/app/router/SidebarItems";
 import NavItems from "./NavItems";
 import NavCollapse from "./NavCollapse";
 import SimpleBar from "simplebar-react";
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import React from "react";
 
 const MobileSidebar = () => {
   const { selectedIconId } = useContext(CustomizerContext) || {};
   const selectedContent = SidebarContent.find(
-    (data) => data.id === selectedIconId
+    (data) => data.id === selectedIconId,
   );
   return (
     <>

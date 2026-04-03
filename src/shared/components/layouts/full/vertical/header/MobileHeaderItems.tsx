@@ -1,13 +1,12 @@
-
 import { Icon } from "@iconify/react";
 import Notifications from "./Notifications";
 import Profile from "./Profile";
 
-import { Navbar } from '@/shared/components/theme-ui';
+import { Navbar } from "@/shared/components/theme-ui";
 import AppLinks from "./AppLinks";
 
 import { useContext } from "react";
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import { Language } from "./Language";
 
 const MobileHeaderItems = () => {
@@ -15,7 +14,7 @@ const MobileHeaderItems = () => {
 
   const toggleMode = () => {
     setActiveMode((prevMode: string) =>
-      prevMode === "light" ? "dark" : "light"
+      prevMode === "light" ? "dark" : "light",
     );
   };
   return (

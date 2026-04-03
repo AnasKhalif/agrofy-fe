@@ -1,7 +1,6 @@
-
-import { CustomizerContext } from "src/app/providers";
-import { Card } from 'src/shared/components/theme-ui';
-import  { useContext } from "react";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
+import { Card } from "src/shared/components/theme-ui";
+import { useContext } from "react";
 import React from "react";
 
 interface TitleCardProps {
@@ -17,8 +16,7 @@ const TitleCard: React.FC<TitleCardProps> = ({
   className,
   title,
 }) => {
-  const { isCardShadow, isBorderRadius } =
-    useContext(CustomizerContext);
+  const { isCardShadow, isBorderRadius } = useContext(CustomizerContext);
 
   return (
     <Card

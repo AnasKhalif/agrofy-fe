@@ -1,11 +1,10 @@
-
 import { Icon } from "@iconify/react";
 
-import { useBoolean } from '@/shared/hooks';
+import { useBoolean } from "@/shared/hooks";
 import * as AppsData from "./Data";
-import { Drawer } from '@/shared/components/theme-ui';
+import { Drawer } from "@/shared/components/theme-ui";
 import SimpleBar from "simplebar-react";
-import MegamenuImg from "/src/assets/images/backgrounds/mega-dd-bg.jpg";
+import MegamenuImg from "@/assets/images/backgrounds/mega-dd-bg.jpg";
 import { Link } from "react-router";
 const AppLinks = () => {
   const drawer = useBoolean();
@@ -37,10 +36,7 @@ const AppLinks = () => {
                 <div className="xl:col-span-8 col-span-12 flex items-stretch p-6">
                   <div className="grid grid-cols-12 gap-3 w-full">
                     {AppsData.appsLink.map((links, index) => (
-                      <div
-                        className="col-span-12 xl:col-span-6 "
-                        key={index}
-                      >
+                      <div className="col-span-12 xl:col-span-6 " key={index}>
                         <Link
                           to={links.href}
                           className="flex gap-3 hover:text-primary group relative items-center"

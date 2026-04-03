@@ -1,11 +1,10 @@
-
-import  { useContext, useEffect, useMemo } from "react";
-import {  Sidebar } from '@/shared/components/theme-ui';
+import { useContext, useEffect, useMemo } from "react";
+import { Sidebar } from "@/shared/components/theme-ui";
 import { IconSidebar } from "./IconSidebar";
 import NavItems from "./NavItems";
 import NavCollapse from "./NavCollapse";
 import SimpleBar from "simplebar-react";
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import { useLocation } from "react-router";
 import FullLogo from "../../shared/logo/FullLogo";
 import React from "react";
@@ -38,7 +37,7 @@ const SidebarLayout = () => {
   }, [hasPermission]);
 
   const selectedContent = filteredSidebarContent.find(
-    (data) => data.id === selectedIconId
+    (data) => data.id === selectedIconId,
   );
 
   function findActiveUrl(narray: any, targetUrl: any) {
@@ -87,8 +86,13 @@ const SidebarLayout = () => {
                 {selectedContent &&
                   selectedContent.items?.map((item, index) => (
                     <div className="caption" key={item.heading}>
-                      <React.Fragment key={index} >
-                        <Typography sx={ThemeText.CaptionSmall} className="pb-3 pl-4">{item.heading}</Typography>
+                      <React.Fragment key={index}>
+                        <Typography
+                          sx={ThemeText.CaptionSmall}
+                          className="pb-3 pl-4"
+                        >
+                          {item.heading}
+                        </Typography>
                         {item.children?.map((child, index) => (
                           <React.Fragment key={child.id && index}>
                             {child.children ? (

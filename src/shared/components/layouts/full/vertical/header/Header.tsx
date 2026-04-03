@@ -1,6 +1,5 @@
-
-import  { useState, useEffect, useContext } from "react";
-import { Navbar } from '@/shared/components/theme-ui';
+import { useState, useEffect, useContext } from "react";
+import { Navbar } from "@/shared/components/theme-ui";
 import Search from "./Search";
 import { Icon } from "@iconify/react";
 import AppLinks from "./AppLinks";
@@ -8,12 +7,12 @@ import Notifications from "./Notifications";
 import Profile from "./Profile";
 import FullLogo from "../../shared/logo/FullLogo";
 import MobileHeaderItems from "./MobileHeaderItems";
-import { Drawer } from '@/shared/components/theme-ui';
+import { Drawer } from "@/shared/components/theme-ui";
 import MobileSidebar from "../sidebar/MobileSidebar";
 import HorizontalMenu from "../../horizontal/header/HorizontalMenu";
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import { Language } from "./Language";
-import { DashboardContext } from "@/app/providers/DashboardProvider";
+import { DashboardContext } from "@/app/contexts/DashboardContext";
 
 interface HeaderPropsType {
   layoutType: string;
@@ -38,10 +37,10 @@ const Header = ({ layoutType }: HeaderPropsType) => {
     };
   }, []);
 
-  const {  isLayout, activeMode, setActiveMode } =
-    useContext(CustomizerContext);
+  const { isLayout, activeMode, setActiveMode } = useContext(CustomizerContext);
 
-    const {isMobileSidebarOpen,setIsMobileSidebarOpen} = useContext(DashboardContext);
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen } =
+    useContext(DashboardContext);
 
   const [mobileMenu, setMobileMenu] = useState("");
 
@@ -55,7 +54,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
 
   const toggleMode = () => {
     setActiveMode((prevMode: string) =>
-      prevMode === "light" ? "dark" : "light"
+      prevMode === "light" ? "dark" : "light",
     );
   };
 
@@ -65,9 +64,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
     <>
       <header
         className={`top-0 z-[5]  ${
-          isSticky
-            ? "bg-white dark:bg-darkgray sticky"
-            : "bg-transparent"
+          isSticky ? "bg-white dark:bg-darkgray sticky" : "bg-transparent"
         }`}
       >
         <Navbar
@@ -169,7 +166,11 @@ const Header = ({ layoutType }: HeaderPropsType) => {
       </header>
 
       {/* Mobile Sidebar */}
-      <Drawer open={isMobileSidebarOpen} onClose={handleClose} className="w-130">
+      <Drawer
+        open={isMobileSidebarOpen}
+        onClose={handleClose}
+        className="w-130"
+      >
         <Drawer.Items>
           <MobileSidebar />
         </Drawer.Items>

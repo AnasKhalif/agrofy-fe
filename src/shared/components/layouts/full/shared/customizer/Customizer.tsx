@@ -1,13 +1,15 @@
-
-
-import  { useContext } from "react";
-import { Button, Drawer, RangeSlider, Tooltip } from '@/shared/components/theme-ui';
+import { useContext } from "react";
+import {
+  Button,
+  Drawer,
+  RangeSlider,
+  Tooltip,
+} from "@/shared/components/theme-ui";
 import { Icon } from "@iconify/react";
-import { useBoolean } from '@/shared/hooks';
+import { useBoolean } from "@/shared/hooks";
 import { IconCheck, IconSettings } from "@tabler/icons-react";
 import SimpleBar from "simplebar-react";
-import { CustomizerContext } from "@/app/providers/CustomizerProvider";
-
+import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 
 export const Customizer = () => {
   const drawer = useBoolean();
@@ -199,7 +201,6 @@ export const Customizer = () => {
                     <label
                       className=" h-6 w-6 rounded-full  cursor-pointer flex items-center justify-center"
                       style={{ backgroundColor: theme.bgColor }}
-                     
                     >
                       {activeTheme === theme.disp && (
                         <IconCheck className="text-white" size={18} />

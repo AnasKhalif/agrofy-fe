@@ -1,11 +1,11 @@
 import { Icon } from "@iconify/react";
-import { Badge, Dropdown } from '@/shared/components/theme-ui';
-import { useAuth } from '@/app/auth';
-import { ROUTES } from '@/app/constants/router';
+import { Badge, Dropdown } from "@/shared/components/theme-ui";
+import { useAuth } from "@/app/auth";
+import { ROUTES } from "@/app/constants/router";
 import * as profileData from "./Data";
 import SimpleBar from "simplebar-react";
 import { Link, useNavigate } from "react-router";
-import profileImg from "/src/assets/images/profile/user-1.jpg"
+import profileImg from "@/assets/images/profile/user-1.jpg";
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -15,7 +15,7 @@ const Profile = () => {
     await logout();
     navigate(ROUTES.AUTH.LOGIN);
   };
-  
+
   return (
     <div className="relative ">
       <Dropdown
@@ -52,9 +52,14 @@ const Profile = () => {
             />
             <div>
               <h5 className="text-15 font-semibold">
-                {user?.name || 'User'}
+                {user?.name || "Admin User"}
               </h5>
-              <p className="text-sm text-ld opacity-80">{user?.email || ''}</p>
+              <p className="text-xs text-primary bg-lightprimary px-2 py-0.5 rounded mb-1">
+                {user?.role || "Administrator"}
+              </p>
+              <p className="text-sm text-ld opacity-80">
+                {user?.email || "admin@agrofy.id"}
+              </p>
             </div>
           </div>
         </div>

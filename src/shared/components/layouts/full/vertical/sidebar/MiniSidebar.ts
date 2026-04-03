@@ -13,13 +13,38 @@ const Miniicons: MiniiconsType[] = [
   },
   {
     id: 2,
-    icon: "solar:settings-outline",
-    tooltip: "Master",
+    icon: "solar:calendar-outline",
+    tooltip: "Jadwal",
   },
   {
     id: 3,
-    icon: "solar:quit-pip-outline",
-    tooltip: "UI Kit",
+    icon: "solar:users-group-two-rounded-outline",
+    tooltip: "Pasien",
+  },
+  {
+    id: 4,
+    icon: "solar:money-bag-outline",
+    tooltip: "Penjualan",
+  },
+  {
+    id: 5,
+    icon: "solar:key-outline",
+    tooltip: "Treatment",
+  },
+  {
+    id: 6,
+    icon: "solar:box-outline",
+    tooltip: "Produk",
+  },
+  {
+    id: 7,
+    icon: "solar:archive-outline",
+    tooltip: "Inventory",
+  },
+  {
+    id: 8,
+    icon: "solar:document-outline",
+    tooltip: "Laporan Penjualan",
   },
 ];
 
