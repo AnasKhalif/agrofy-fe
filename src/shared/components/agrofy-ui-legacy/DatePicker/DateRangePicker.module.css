@@ -1,0 +1,217 @@
+/* Material Design Floating Label Pattern */
+
+.inputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px 14px; /* Match MUI TextField padding */
+  font-size: 0.875rem; /* Match MUI TextField font size */
+  font-family: inherit;
+  line-height: normal;
+  border: 1px solid var(--border-color, #999);
+  border-radius: var(--border-radius, 8px); /* Use theme borderRadius */
+  background-color: transparent;
+  outline: none;
+  transition: border-color 0.2s ease, border-width 0.2s ease, padding 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Match MUI TextField focus styling - 1px border */
+.inputField:focus {
+  border-width: 1px;
+  padding: 10px 14px; /* Keep same padding as normal state */
+  border-color: var(--focus-border-color) !important;
+}
+
+/* Ensure focus styles work with react-tailwindcss-datepicker */
+.inputContainer input:focus {
+  border-width: 1px !important;
+  padding: 10px 14px !important;
+  border-color: var(--focus-border-color) !important;
+}
+
+/* Floating label */
+.floatingLabel {
+  position: absolute;
+  left: 8px; /* Match input padding */
+  top: 10px; /* Match input padding */
+  padding: 0 4px;
+  transition: all 0.2s ease-in-out;
+  pointer-events: none;
+  font-size: 0.875rem; /* Match MUI TextField font size */
+  font-weight: 600; /* Match MUI FormLabel fontWeight */
+  z-index: 1;
+  background-color: inherit;
+}
+
+
+/* Float up animation - when focused OR has value */
+/* Target the input within the datepicker container - the input is inside a div created by react-tailwindcss-datepicker */
+.inputContainer input:focus ~ .floatingLabel,
+.inputContainer input:not(:placeholder-shown) ~ .floatingLabel,
+.inputContainer:focus-within .floatingLabel,
+.inputContainer:has(input:not(:placeholder-shown)) .floatingLabel {
+  top: -8px;
+  font-size: 0.75rem; /* Match MUI FormHelperText font size */
+  font-weight: 600; /* Match MUI FormLabel fontWeight */
+}
+
+/* Active state for floating label (controlled by JavaScript) */
+.floatingLabelActive {
+  top: -8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+/* Label color on focus */
+.inputContainer input:focus ~ .floatingLabel,
+.inputContainer:focus-within .floatingLabel {
+  color: var(--label-focus-color) !important;
+}
+
+/* Active label color */
+.floatingLabelActive {
+  color: var(--label-focus-color) !important;
+}
+
+/* Error state for floating label */
+.floatingLabelError {
+  color: #d32f2f !important;
+}
+
+/* Error state styling - match MUI TextField error styling */
+.error {
+  border-color: #d32f2f !important;
+}
+
+.error:focus {
+  border-color: #d32f2f !important;
+  border-width: 1px !important; /* Keep 1px border like MUI */
+}
+
+/* Error state for react-tailwindcss-datepicker input */
+.inputContainer input.error {
+  border-color: #d32f2f !important;
+}
+
+.inputContainer input.error:focus {
+  border-color: #d32f2f !important;
+  border-width: 1px !important; /* Keep 1px border like MUI */
+}
+
+/* Error state for floating label */
+.inputContainer input.error ~ .floatingLabel {
+  color: #d32f2f !important;
+}
+
+/* Required asterisk */
+.required {
+  color: #d32f2f;
+}
+
+/* Calendar styling overrides to match theme */
+:global(.react-tailwindcss-datepicker) {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Calendar popup container */
+:global(.react-tailwindcss-datepicker > div) {
+  background-color: var(--color-surface-ld) !important;
+  border-radius: 8px !important;
+  box-shadow: 0px 2px 4px -1px rgba(175, 182, 201, 0.2) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* Calendar day headers */
+:global(.react-tailwindcss-datepicker .tracking-wide.text-gray-500),
+:global(.react-tailwindcss-datepicker div.tracking-wide.text-gray-500) {
+  color: var(--color-bodytext) !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Calendar navigation buttons */
+:global(.react-tailwindcss-datepicker button[type="button"]) {
+  transition: all 0.2s ease !important;
+}
+
+:global(.react-tailwindcss-datepicker button[type="button"]:hover) {
+  background-color: var(--color-lighthover) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Calendar days - normal state */
+:global(.react-tailwindcss-datepicker .flex.items-center.justify-center) {
+  color: var(--color-dark) !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Calendar days - hover state */
+:global(.react-tailwindcss-datepicker .flex.items-center.justify-center:hover) {
+  background-color: var(--color-lighthover) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Selected date range - start date (blue-500) */
+:global(.react-tailwindcss-datepicker .bg-blue-500),
+:global(.react-tailwindcss-datepicker button.bg-blue-500) {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+/* Selected date range - middle dates (blue-100) */
+:global(.react-tailwindcss-datepicker .bg-blue-100),
+:global(.react-tailwindcss-datepicker button.bg-blue-100) {
+  background-color: var(--color-lightprimary) !important;
+  color: var(--color-primary) !important;
+  font-weight: 500 !important;
+}
+
+
+/* Disabled dates */
+:global(.react-tailwindcss-datepicker .text-gray-400),
+:global(.react-tailwindcss-datepicker button.text-gray-400) {
+  color: var(--color-muted) !important;
+  opacity: 0.5 !important;
+}
+
+/* Calendar borders */
+:global(.react-tailwindcss-datepicker .border-gray-300) {
+  border-color: var(--color-border) !important;
+}
+
+
+/* Calendar background */
+:global(.react-tailwindcss-datepicker .bg-white) {
+  background-color: var(--color-surface-ld) !important;
+}
+
+
+
+/* Focus states */
+:global(.react-tailwindcss-datepicker .focus\:ring-blue-500\/50) {
+  --tw-ring-color: var(--color-primary) !important;
+}
+
+:global(.react-tailwindcss-datepicker .focus\:bg-blue-100\/50) {
+  background-color: var(--color-lightprimary) !important;
+}
+
+/* More specific overrides for hardcoded Tailwind classes */
+:global(.react-tailwindcss-datepicker button.bg-blue-500.text-white) {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
+
+:global(.react-tailwindcss-datepicker button.bg-blue-100) {
+  background-color: var(--color-lightprimary) !important;
+  color: var(--color-primary) !important;
+}
+
