@@ -116,7 +116,10 @@ export const authService = {
     const userStr = localStorage.getItem("user");
     if (!userStr) return false;
     const user = JSON.parse(userStr) as User;
-    return user?.role?.name === roleName;
+    if (!user?.role) return false;
+    return typeof user.role === "string"
+      ? user.role === roleName
+      : user.role.name === roleName;
   },
 
   /**

@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import SidebarContent from "@/app/router/SidebarItems";
 import LogoIcon from "@/assets/images/logos/smartgrowth.png";
 import NexDashboardSidebarContent from "@/app/router/NexDashboardSidebarItems";
+import StuntingParentSidebarContent from "@/app/router/StuntingParentSidebarItems";
 import { usePermission, useToast } from "@/shared/hooks";
 import { Button } from '@/shared/components/agrofy-ui/ui/button';
 import {
@@ -109,10 +110,25 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
       ]
     : clinicOptions;
 
-  // Determine which sidebar content to use based on selected clinic
-  const currentSidebarContent = selectedClinic.id === 'nex'
-    ? NexDashboardSidebarContent
-    : SidebarContent;
+  // Determine user role
+  const userRoleName = user?.role
+    ? typeof user.role === "string"
+      ? user.role
+      : user.role.name
+    : null;
+
+  const isSuperAdmin = userRoleName === "super_admin";
+  const isParent = userRoleName === "orang_tua" || userRoleName === "parent";
+
+  // Determine which sidebar content to use:
+  // - super_admin / nex → existing clinic sidebar (hidden from non-super-admin)
+  // - orang_tua/parent → stunting parent sidebar
+  // - default (no role match) → parent sidebar as fallback
+  const currentSidebarContent = isParent
+    ? StuntingParentSidebarContent
+    : isSuperAdmin
+      ? (selectedClinic.id === 'nex' ? NexDashboardSidebarContent : SidebarContent)
+      : StuntingParentSidebarContent;
 
   // Filter menu items by permissions
   const filteredSidebarContent = useMemo(() => {

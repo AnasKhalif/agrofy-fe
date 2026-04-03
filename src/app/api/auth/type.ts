@@ -70,10 +70,11 @@ export interface Profile {
 }
 
 export interface User {
+  uid: string;
   id: string;
   email: string;
   name: string;
-  role: Role | null;
+  role: Role | string | null;
   company: Company | null;
   is_active: boolean;
   email_verified: boolean;
@@ -90,13 +91,12 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
+  full_name: string;
+  phone_number: string;
+  address: string;
   email: string;
   password: string;
-  first_name: string;
-  last_name?: string;
-  company_name: string;
-  company_address: string;
-  company_npwp: string;
+  confirm_password: string;
 }
 
 export interface RegisterEmployeeRequest {
@@ -134,5 +134,5 @@ export interface ChangeBranchRequest {
 export interface LoginData {
   token: string;
   user: User;
-  expires_at: string;
+  expires_at: string | null;
 }

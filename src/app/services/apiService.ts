@@ -22,7 +22,7 @@ class ApiService {
   private queryClient: QueryClient | null = null;
 
   constructor() {
-    this.apiUrl = import.meta.env.VITE_API_URL || 'https://nexhealth-api.venturo.pro';
+    this.apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     this.api = axios.create({
       baseURL: this.apiUrl,
       timeout: 30000,

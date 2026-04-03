@@ -78,19 +78,13 @@ export const useRegisterStep2Form = () => {
           throw new Error("Data langkah 1 tidak ditemukan");
         }
 
-        const nameParts = step1Data.full_name.trim().split(/\s+/);
-        const firstName = nameParts[0] || "User";
-        const lastName = nameParts.slice(1).join(" ") || undefined;
-        const phoneDigits = step1Data.phone_number.replace(/\D/g, "").slice(0, 16);
-
         const payload: RegisterData = {
+          full_name: step1Data.full_name,
+          phone_number: step1Data.phone_number,
+          address: step1Data.address,
           email: data.email,
           password: data.password,
-          first_name: firstName,
-          last_name: lastName,
-          company_name: step1Data.full_name,
-          company_address: step1Data.address,
-          company_npwp: phoneDigits,
+          confirm_password: data.confirm_password,
         };
 
         await registerMutation.mutateAsync(payload);

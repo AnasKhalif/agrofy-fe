@@ -28,6 +28,27 @@ interface HealthcareTopbarProps {
 const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+
+  const isSuperAdmin =
+    user?.role
+      ? typeof user.role === "string"
+        ? user.role === "super_admin"
+        : user.role.name === "super_admin"
+      : false;
+
+  const displayName = user?.name?.trim() || "Admin User";
+  const roleLabel =
+    typeof user?.role === "string"
+      ? user.role
+      : user?.role?.label || user?.role?.name || "Administrator";
+  const emailLabel = user?.email || "admin@agrofy.id";
+  const avatarInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() || "")
+    .join("") || "AU";
+
   return (
     <div className="h-[64px] bg-white dark:bg-darkgray border-b border-gray-200 dark:border-darkborder flex items-center justify-between px-6">
       {/* Left Side - View Selector */}
@@ -41,8 +62,8 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
           <Icon icon="solar:hamburger-menu-line-duotone" height={24} />
         </button>
 
-        {/* View Selector Dropdown */}
-        <DropdownMenu>
+        {/* View Selector Dropdown - Super Admin only */}
+        {isSuperAdmin && <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className="hidden lg:flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -89,7 +110,7 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
               Staff View
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>}
       </div>
 
       {/* Right Side - Notifications, Settings, Profile */}
@@ -190,20 +211,19 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
             <button className="flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-darkminisidebar rounded-lg px-2 py-1.5 transition-colors">
               <div className="hidden md:block text-right">
                 <div className="text-sm font-medium text-gray-900 dark:text-white">
-                  {user?.profile?.first_name || "Admin"}{" "}
-                  {user?.profile?.last_name || "User"}
+                  {displayName}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {user?.role?.label || "Administrator"}
+                  {roleLabel}
                 </div>
               </div>
               <Avatar className="w-9 h-9">
                 <AvatarImage
                   src={user?.profile?.photo}
-                  alt={user?.profile?.first_name || "Admin"}
+                  alt={displayName}
                 />
                 <AvatarFallback className="bg-blue-600 text-white text-sm">
-                  AU
+                  {avatarInitials}
                 </AvatarFallback>
               </Avatar>
             </button>
@@ -211,14 +231,13 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
           <DropdownMenuContent align="end">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-darkborder">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user?.profile?.first_name || "Admin"}{" "}
-                {user?.profile?.last_name || "User"}
+                {displayName}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {user?.role?.label || "Administrator"}
+                {roleLabel}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {user?.email || "admin@agrofy.id"}
+                {emailLabel}
               </p>
             </div>
             <DropdownMenuItem
