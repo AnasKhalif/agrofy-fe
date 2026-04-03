@@ -10,6 +10,8 @@ export const ROUTES = {
   // Auth Routes
   AUTH: {
     LOGIN: "/auth/login",
+    REGISTER: "/auth/register",
+    REGISTER_STEP_2: "/auth/register/step-2",
   },
 
   // Dashboard V1

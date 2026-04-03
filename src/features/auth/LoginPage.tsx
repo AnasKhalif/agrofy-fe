@@ -1,4 +1,3 @@
-import Logo from "@/shared/components/layouts/full/shared/logo/Logo";
 import { Link } from "react-router-dom";
 import AuthLogin from "./components/forms/AuthLogin";
 import LeftSidebarPart from "./components/LeftSidebarPart";
@@ -22,9 +21,6 @@ const LoginPage = () => {
           <div className="xl:col-span-4 lg:col-span-6 col-span-12 sm:px-12 lg:px-6 xl:px-3 py-3">
             <div className="flex h-full w-full items-center px-3 lg:justify-start justify-center rounded-lg bg-white">
               <div className="max-w-md w-full mx-auto">
-                <div className="flex justify-center items-center w-xl">
-                  <Logo className="w-20 h-20" />
-                </div>
                 <h3 className="flex justify-center items-center text-2xl font-bold my-3 mt-5">
                   Log in into your account
                 </h3>

@@ -3,6 +3,10 @@ import { lazy } from "react";
 import { ROUTES } from "@/app/constants/router";
 
 const LoginPage = lazy(() => import("@/features/auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/features/auth/RegisterPage"));
+const RegisterStep2Page = lazy(
+  () => import("@/features/auth/RegisterStep2Page"),
+);
 const HealthcareLayout = lazy(
   () => import("@/shared/components/layouts/full/HealthcareLayout"),
 );
@@ -14,6 +18,14 @@ const router = createBrowserRouter([
   {
     path: "/auth/login",
     element: <LoginPage />,
+  },
+  {
+    path: "/auth/register",
+    element: <RegisterPage />,
+  },
+  {
+    path: "/auth/register/step-2",
+    element: <RegisterStep2Page />,
   },
   {
     path: "/",

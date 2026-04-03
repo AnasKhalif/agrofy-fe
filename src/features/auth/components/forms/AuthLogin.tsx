@@ -3,8 +3,10 @@ import { Button, Label, Checkbox } from "@/shared/components/theme-ui";
 import { Form, FormTextField } from "@/shared/components/agrofy-ui-legacy";
 // import { Link } from "react-router";
 import { useLoginForm } from "../../hooks/useLoginForm";
-import { FC } from "react";
+import { FC, useState } from "react";
 import { StandbyProvider } from "@/app/contexts/StandbyContext";
+import { IconButton, InputAdornment } from "@mui/material";
+import { Eye, EyeOff } from "lucide-react";
 
 const AuthLoginContent: FC = () => {
   const { form, errorMessage, isLoading, onSubmit } = useLoginForm();
@@ -12,6 +14,7 @@ const AuthLoginContent: FC = () => {
     register,
     formState: { errors },
   } = form;
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <>
@@ -45,7 +48,7 @@ const AuthLoginContent: FC = () => {
             name="password"
             label="Password"
             placeholder="Masukan Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             fullWidth
             rules={{
               required: "Email Wajib",
@@ -53,6 +56,19 @@ const AuthLoginContent: FC = () => {
                 value: 6,
                 message: "Password must be at least 6 characters",
               },
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    edge="end"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
             helperText={errors.password?.message}
           />
