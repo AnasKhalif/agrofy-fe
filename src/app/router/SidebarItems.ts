@@ -139,6 +139,23 @@ const SidebarContent: MenuItem[] = [
           },
         ],
       },
+      {
+        heading: "SETTINGS",
+        children: [
+          {
+            name: "Manajemen Pengguna",
+            icon: "solar:users-group-two-rounded-outline",
+            id: "super-admin-users",
+            url: "/users",
+          },
+          {
+            name: "Role & Permission",
+            icon: "solar:shield-check-outline",
+            id: "super-admin-roles",
+            url: "/roles",
+          },
+        ],
+      },
     ],
   },
 ];

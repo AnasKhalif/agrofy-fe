@@ -11,8 +11,8 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    await logout();
+  const handleSignOut = () => {
+    logout();
     navigate(ROUTES.AUTH.LOGIN);
   };
 

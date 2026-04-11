@@ -1,0 +1,166 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { Icon } from "@iconify/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/shared/components/agrofy-ui/ui/dialog";
+import { Button } from "@/shared/components/agrofy-ui/ui/button";
+import { Input } from "@/shared/components/agrofy-ui/ui/input";
+import { Label } from "@/shared/components/agrofy-ui/ui/label";
+import { Textarea } from "@/shared/components/agrofy-ui/ui/textarea";
+import { Switch } from "@/shared/components/agrofy-ui/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/agrofy-ui/ui/select";
+import { useCreateArticle, useUpdateArticle } from "@/app/api/article/useArticleApi";
+import { useToast } from "@/shared/hooks";
+import type { Article, CreateArticleRequest } from "@/app/api/article/type";
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  article?: Article | null;
+}
+
+const CATEGORIES = ["Nutrisi", "Pencegahan", "Penanganan", "Tumbuh Kembang", "Tips Parenting"];
+
+const ArticleFormDialog = ({ open, onClose, article }: Props) => {
+  const toast = useToast();
+  const isEdit = !!article;
+
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateArticleRequest>({
+    defaultValues: { title: "", body: "", category: "", excerpt: "", published: false },
+  });
+
+  const published = watch("published");
+  const category = watch("category");
+
+  useEffect(() => {
+    if (article) {
+      reset({
+        title: article.title,
+        body: article.body,
+        category: article.category ?? "",
+        excerpt: article.excerpt ?? "",
+        published: article.published,
+      });
+    } else {
+      reset({ title: "", body: "", category: "", excerpt: "", published: false });
+    }
+  }, [article, reset]);
+
+  const createMutation = useCreateArticle({
+    onSuccess: () => { toast.success("Artikel berhasil dibuat"); onClose(); },
+    onError: () => toast.error("Gagal membuat artikel"),
+  });
+
+  const updateMutation = useUpdateArticle({
+    onSuccess: () => { toast.success("Artikel berhasil diperbarui"); onClose(); },
+    onError: () => toast.error("Gagal memperbarui artikel"),
+  });
+
+  const onSubmit = (data: CreateArticleRequest) => {
+    if (isEdit && article) {
+      updateMutation.mutate({ id: article.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Icon icon="solar:document-text-outline" width={20} className="text-[#0152EA]" />
+            {isEdit ? "Edit Artikel" : "Tambah Artikel Baru"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
+          {/* Judul */}
+          <div className="space-y-1.5">
+            <Label htmlFor="title">Judul Artikel <span className="text-red-500">*</span></Label>
+            <Input
+              id="title"
+              placeholder="Masukkan judul artikel..."
+              {...register("title", { required: "Judul wajib diisi" })}
+            />
+            {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+          </div>
+
+          {/* Kategori */}
+          <div className="space-y-1.5">
+            <Label>Kategori</Label>
+            <Select value={category ?? ""} onValueChange={(v) => setValue("category", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih kategori..." />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Excerpt */}
+          <div className="space-y-1.5">
+            <Label htmlFor="excerpt">Ringkasan</Label>
+            <Input
+              id="excerpt"
+              placeholder="Ringkasan singkat artikel..."
+              {...register("excerpt")}
+            />
+          </div>
+
+          {/* Konten */}
+          <div className="space-y-1.5">
+            <Label htmlFor="body">Konten <span className="text-red-500">*</span></Label>
+            <Textarea
+              id="body"
+              placeholder="Tulis isi artikel di sini..."
+              className="min-h-[200px] resize-y"
+              {...register("body", { required: "Konten wajib diisi" })}
+            />
+            {errors.body && <p className="text-xs text-red-500">{errors.body.message}</p>}
+          </div>
+
+          {/* Published toggle */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-darkminisidebar rounded-lg">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Publish Artikel</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Artikel akan tampil di halaman publik</p>
+            </div>
+            <Switch
+              checked={published}
+              onCheckedChange={(v) => setValue("published", v)}
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
+              Batal
+            </Button>
+            <Button type="submit" className="bg-[#0152EA] hover:bg-blue-700 text-white" disabled={isPending}>
+              {isPending && <Icon icon="solar:refresh-line-duotone" className="mr-2 animate-spin" width={16} />}
+              {isEdit ? "Simpan Perubahan" : "Buat Artikel"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ArticleFormDialog;

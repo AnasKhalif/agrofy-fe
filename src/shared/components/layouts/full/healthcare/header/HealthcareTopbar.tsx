@@ -32,8 +32,8 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
   const isSuperAdmin =
     user?.role
       ? typeof user.role === "string"
-        ? user.role === "super_admin"
-        : user.role.name === "super_admin"
+        ? user.role === "superadmin"
+        : user.role.name === "superadmin"
       : false;
 
   const displayName = user?.name?.trim() || "Admin User";

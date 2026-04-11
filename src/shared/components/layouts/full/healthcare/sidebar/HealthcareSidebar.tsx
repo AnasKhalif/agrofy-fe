@@ -5,6 +5,8 @@ import SidebarContent from "@/app/router/SidebarItems";
 import LogoIcon from "@/assets/images/logos/smartgrowth.png";
 import NexDashboardSidebarContent from "@/app/router/NexDashboardSidebarItems";
 import StuntingParentSidebarContent from "@/app/router/StuntingParentSidebarItems";
+import AdminSidebarContent from "@/app/router/AdminSidebarItems";
+import DoctorSidebarContent from "@/app/router/DoctorSidebarItems";
 import { usePermission, useToast } from "@/shared/hooks";
 import { Button } from '@/shared/components/agrofy-ui/ui/button';
 import {
@@ -117,18 +119,19 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
       : user.role.name
     : null;
 
-  const isSuperAdmin = userRoleName === "super_admin";
+  const isSuperAdmin = userRoleName === "superadmin";
+  const isAdmin = userRoleName === "admin";
+  const isDoctor = userRoleName === "dokter" || userRoleName === "health_worker";
   const isParent = userRoleName === "orang_tua" || userRoleName === "parent";
 
-  // Determine which sidebar content to use:
-  // - super_admin / nex → existing clinic sidebar (hidden from non-super-admin)
-  // - orang_tua/parent → stunting parent sidebar
-  // - default (no role match) → parent sidebar as fallback
-  const currentSidebarContent = isParent
-    ? StuntingParentSidebarContent
-    : isSuperAdmin
-      ? (selectedClinic.id === 'nex' ? NexDashboardSidebarContent : SidebarContent)
-      : StuntingParentSidebarContent;
+  // Determine which sidebar content to use based on role
+  const currentSidebarContent = isSuperAdmin
+    ? (selectedClinic.id === 'nex' ? NexDashboardSidebarContent : SidebarContent)
+    : isAdmin
+      ? AdminSidebarContent
+      : isDoctor
+        ? DoctorSidebarContent
+        : StuntingParentSidebarContent; // default: orang_tua / fallback
 
   // Filter menu items by permissions
   const filteredSidebarContent = useMemo(() => {
