@@ -126,7 +126,14 @@ const ConsultationPage = () => {
                     </p>
                   )}
                 </div>
-                <Icon icon="solar:alt-arrow-right-outline" className="text-gray-300 flex-shrink-0" width={16} />
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <Icon icon="solar:alt-arrow-right-outline" className="text-gray-300" width={16} />
+                  {(c.unread_count ?? 0) > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {(c.unread_count ?? 0) > 99 ? "99+" : c.unread_count}
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-xs text-gray-400 mt-2 text-right">
                 {new Date(c.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}

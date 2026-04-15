@@ -73,17 +73,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * Always clears local auth data even if API call fails
    */
   const logout = async () => {
-    try {
-      // Call logout API (but don't wait for it to succeed)
-      await authApi.logout();
-    } catch (error) {
-      // Log API error but continue with local cleanup
-      console.error("Logout API error (continuing with local cleanup):", error);
-    } finally {
-      // Always clear auth data locally, regardless of API success/failure
-      authService.clearAuth();
-      setUser(null);
-    }
+    // Clear local state immediately — don't wait for API
+    authService.clearAuth();
+    setUser(null);
+    // Fire API in background, ignore result
+    authApi.logout().catch(() => {});
   };
 
   /**
@@ -103,8 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const value: AuthContextType = {
     user,
-    // Check token first to prevent redirect loop during initial load
-    isAuthenticated: !!authService.getToken(),
+    isAuthenticated: !!user,
     isLoading,
     login,
     logout,

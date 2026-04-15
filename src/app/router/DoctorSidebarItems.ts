@@ -27,24 +27,13 @@ const DoctorSidebarContent: MenuItem[] = [
         ],
       },
       {
-        heading: "PASIEN",
-        children: [
-          {
-            name: "Daftar Pasien",
-            icon: "solar:users-group-rounded-outline",
-            id: "doctor-patients",
-            url: "/doctor/patients",
-          },
-        ],
-      },
-      {
         heading: "AKUN",
         children: [
           {
             name: "Profil Saya",
             icon: "solar:user-circle-outline",
             id: "doctor-profile",
-            url: "/doctor/profile",
+            url: "/profile",
           },
         ],
       },

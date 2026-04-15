@@ -31,12 +31,18 @@ const DoctorConsultationPage = () => {
   const ongoing = consultations.filter((c) => c.status === "ongoing").length;
 
   if (selectedConsultation) {
+    const handleStatusChange = async () => {
+      const result = await refetch();
+      const updated = (result.data?.data?.data ?? []).find(c => c.id === selectedConsultation.id);
+      if (updated) setSelectedConsultation(updated);
+    };
+
     return (
       <div className="h-[calc(100vh-64px)] flex flex-col">
         <ChatRoom
           consultation={selectedConsultation}
           onBack={() => { setSelectedConsultation(null); refetch(); }}
-          onStatusChange={refetch}
+          onStatusChange={handleStatusChange}
         />
       </div>
     );
@@ -142,8 +148,10 @@ const DoctorConsultationPage = () => {
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Icon icon="solar:alt-arrow-right-outline" className="text-gray-300" width={16} />
-                  {c.status === "pending" && (
-                    <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                  {(c.unread_count ?? 0) > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {(c.unread_count ?? 0) > 99 ? "99+" : c.unread_count}
+                    </span>
                   )}
                 </div>
               </div>

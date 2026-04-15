@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { useGetMessages, useSendMessage, useUpdateConsultationStatus } from "@/app/api/consultation/useConsultationApi";
 import { useAuth } from "@/app/auth";
@@ -26,6 +26,37 @@ const statusLabel = {
   completed: "Selesai",
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  'severely stunted': 'bg-red-50 border-red-200 text-red-700',
+  'stunted':          'bg-orange-50 border-orange-200 text-orange-700',
+  'normal':           'bg-green-50 border-green-200 text-green-700',
+  'tinggi':           'bg-blue-50 border-blue-200 text-blue-700',
+};
+
+const parseStuntingAttachment = (attachment: string) => {
+  try {
+    const data = JSON.parse(attachment);
+    if (data.type !== 'stunting_result') return null;
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+const StuntingResultCard = ({ attachment }: { attachment: string }) => {
+  const data = parseStuntingAttachment(attachment);
+  if (!data) return null;
+  const colorClass = STATUS_COLORS[data.prediction_result as string] ?? STATUS_COLORS['normal'];
+  return (
+    <div className={`rounded-lg border p-3 mb-2 text-xs ${colorClass}`}>
+      <p className="font-semibold text-[10px] uppercase tracking-wide opacity-70 mb-1">Hasil Deteksi Stunting</p>
+      <p className="font-bold text-sm">{data.label}</p>
+      <p className="opacity-80 mt-0.5">{data.child_name} · {data.age_months} bulan · TB: {data.height} cm</p>
+      <p className="opacity-80">Z-score TB/U: <strong>{Number(data.z_score).toFixed(2)}</strong></p>
+    </div>
+  );
+};
+
 const ChatRoom = ({ consultation, onBack, onStatusChange }: Props) => {
   const { user } = useAuth();
   const toast = useToast();
@@ -33,7 +64,7 @@ const ChatRoom = ({ consultation, onBack, onStatusChange }: Props) => {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: msgData, isLoading } = useGetMessages(consultation.id);
-  const messages = msgData?.data?.data ?? [];
+  const messages = useMemo(() => msgData?.data?.data ?? [], [msgData]);
 
   const sendMutation = useSendMessage(consultation.id, {
     onSuccess: () => setMessage(""),
@@ -156,6 +187,7 @@ const ChatRoom = ({ consultation, onBack, onStatusChange }: Props) => {
                       ? "bg-[#0152EA] text-white rounded-br-none"
                       : "bg-white dark:bg-darkgray text-gray-800 dark:text-white rounded-bl-none"
                   }`}>
+                    {msg.attachment && <StuntingResultCard attachment={msg.attachment} />}
                     <p className="whitespace-pre-wrap break-words pr-12">{msg.message}</p>
                     {/* Time + ticks — inside bubble bottom-right */}
                     <div className={`absolute bottom-1.5 right-2 flex items-center gap-0.5 ${isMine ? "text-blue-200" : "text-gray-400"}`}>

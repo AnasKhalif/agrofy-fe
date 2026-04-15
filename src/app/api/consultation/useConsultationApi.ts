@@ -31,6 +31,7 @@ export const useGetConsultations = (
     ...options,
     queryKey: consultationKeys.list(params),
     queryFn: () => consultationApi.getAll(params),
+    refetchInterval: 5000,
   });
 
 export const useGetConsultation = (

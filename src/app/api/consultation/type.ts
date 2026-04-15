@@ -21,6 +21,7 @@ export interface Consultation {
   };
   latest_message?: ConsultationMessage | null;
   messages_count?: number;
+  unread_count?: number;
   created_at: string;
   updated_at: string;
 }
