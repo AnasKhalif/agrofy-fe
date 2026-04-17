@@ -2,7 +2,7 @@ import { uniqueId } from "lodash";
 import { ROUTES } from "@/app/constants/router";
 import { PERMISSIONS } from "@/app/constants/permission";
 
-interface TopbarChildItem {
+export interface TopbarChildItem {
   id: string;
   title: string;
   icon: string;
@@ -11,7 +11,7 @@ interface TopbarChildItem {
   children?: TopbarChildItem[];
 }
 
-interface TopbarMenuItem {
+export interface TopbarMenuItem {
   id: string;
   title: string;
   icon: string;
@@ -33,7 +33,7 @@ const Menuitems: TopbarMenuItem[] = [
         title: "Performa Bisnis",
         icon: "solar:chart-square-outline",
         href: ROUTES.DASHBOARD_V1.DASHBOARD_BUSINESS_PERFORMANCE,
-        permission: PERMISSIONS.DASHBOARD_BUSINESS_PERFORMANCE,
+        permission: PERMISSIONS.DASHBOARD_READ,
       },
     ],
   },

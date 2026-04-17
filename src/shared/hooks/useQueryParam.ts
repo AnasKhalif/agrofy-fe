@@ -29,6 +29,7 @@ export const setQueryParam = (
     } else {
       window.history.replaceState(null, '', newUrl);
     }
+    window.dispatchEvent(new PopStateEvent('popstate'));
   } catch {
     // ignore
   }

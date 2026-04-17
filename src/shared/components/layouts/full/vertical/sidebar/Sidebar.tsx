@@ -8,17 +8,18 @@ import { CustomizerContext } from "@/app/contexts/CustomizerContext";
 import { useLocation } from "react-router";
 import FullLogo from "../../shared/logo/FullLogo";
 import React from "react";
-import SidebarContent from "@/app/router/SidebarItems";
+import SidebarContent, { MenuItem } from "@/app/router/SidebarItems";
 import { usePermission } from "@/shared/hooks";
 import ThemeText from "@/shared/theme/themeText";
 import { Typography } from "@mui/material";
 
 const SidebarLayout = () => {
-  const { selectedIconId, setSelectedIconId } =
-    useContext(CustomizerContext) || {};
+  const customizer = useContext(CustomizerContext);
   const { hasPermission } = usePermission();
   const location = useLocation();
   const pathname = location.pathname;
+  const selectedIconId = customizer?.selectedIconId;
+  const setSelectedIconId = customizer?.setSelectedIconId;
 
   // Filter menu items by permissions
   const filteredSidebarContent = useMemo(() => {
@@ -40,7 +41,7 @@ const SidebarLayout = () => {
     (data) => data.id === selectedIconId,
   );
 
-  function findActiveUrl(narray: any, targetUrl: any) {
+  function findActiveUrl(narray: MenuItem[], targetUrl: string) {
     for (const item of narray) {
       // Check if the `items` array exists in the top-level object
       if (item.items) {
@@ -62,10 +63,14 @@ const SidebarLayout = () => {
 
   useEffect(() => {
     const result = findActiveUrl(filteredSidebarContent, pathname);
-    if (result) {
+    if (result && setSelectedIconId) {
       setSelectedIconId(result);
     }
   }, [pathname, setSelectedIconId, filteredSidebarContent]);
+
+  if (!customizer) {
+    return null;
+  }
 
   return (
     <>

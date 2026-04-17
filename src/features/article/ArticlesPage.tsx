@@ -3,21 +3,6 @@ import { Icon } from "@iconify/react";
 import { useGetArticles, useDeleteArticle } from "@/app/api/article/useArticleApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { Input } from "@/shared/components/agrofy-ui/ui/input";
-import { Badge } from "@/shared/components/agrofy-ui/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/agrofy-ui/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/shared/components/agrofy-ui/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +16,11 @@ import {
 import { useToast } from "@/shared/hooks";
 import ArticleFormDialog from "./components/ArticleFormDialog";
 import type { Article } from "@/app/api/article/type";
+
+const STATUS_COLORS: Record<string, string> = {
+  published: "bg-green-100 text-green-700",
+  draft: "bg-gray-100 text-gray-600",
+};
 
 const ArticlesPage = () => {
   const toast = useToast();
@@ -97,102 +87,88 @@ const ArticlesPage = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50 dark:bg-darkminisidebar">
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Judul</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Kategori</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Status</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300">Tanggal</TableHead>
-              <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-right">Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <TableCell key={j}>
-                      <div className="h-4 bg-gray-100 dark:bg-darkminisidebar rounded animate-pulse" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : articles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-12 text-gray-400">
-                  <Icon icon="solar:document-outline" width={40} className="mx-auto mb-2 opacity-40" />
-                  <p>Belum ada artikel</p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              articles.map((article) => (
-                <TableRow key={article.id} className="hover:bg-gray-50 dark:hover:bg-darkminisidebar">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {article.image ? (
-                        <img src={article.image} alt={article.title} className="w-10 h-10 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                          <Icon icon="solar:document-text-outline" className="text-[#0152EA]" width={18} />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white text-sm line-clamp-1">{article.title}</p>
-                        {article.excerpt && (
-                          <p className="text-xs text-gray-400 line-clamp-1">{article.excerpt}</p>
-                        )}
-                      </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder p-4 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-14 h-14 rounded-lg bg-gray-100 dark:bg-darkminisidebar" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-100 dark:bg-darkminisidebar rounded w-2/5" />
+                  <div className="h-3 bg-gray-100 dark:bg-darkminisidebar rounded w-full" />
+                  <div className="h-3 bg-gray-100 dark:bg-darkminisidebar rounded w-4/5" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : articles.length === 0 ? (
+        <div className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder py-20 text-center">
+          <Icon icon="solar:document-outline" width={56} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Belum ada artikel</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">Mulai dengan menambahkan artikel pertama</p>
+          <Button onClick={handleCreate} className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2">
+            <Icon icon="solar:add-circle-outline" width={16} />
+            Tambah Artikel Pertama
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {articles.map((article) => (
+            <div key={article.id} className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder p-4 hover:shadow-sm transition-shadow">
+              <div className="flex items-start gap-3">
+                <div className="w-14 h-14 rounded-lg bg-gray-50 dark:bg-darkminisidebar p-1.5 flex-shrink-0 flex items-center justify-center">
+                  {article.image ? (
+                    <img src={article.image} alt={article.title} className="h-full w-full object-contain rounded" />
+                  ) : (
+                    <Icon icon="solar:document-text-outline" className="text-[#0152EA]" width={22} />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2">{article.title}</h3>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {article.category ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium border border-gray-200 dark:border-darkborder text-gray-600 dark:text-gray-300">
+                          {article.category}
+                        </span>
+                      ) : null}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${article.published ? STATUS_COLORS.published : STATUS_COLORS.draft}`}>
+                        {article.published ? "Published" : "Draft"}
+                      </span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {article.category ? (
-                      <Badge variant="outline" className="text-xs">{article.category}</Badge>
-                    ) : (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={article.published
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                    }>
-                      {article.published ? "Published" : "Draft"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(article.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Icon icon="solar:menu-dots-bold" width={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(article)}>
-                          <Icon icon="solar:pen-outline" className="mr-2" width={15} />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600"
-                          onClick={() => setDeleteId(article.id)}
-                        >
-                          <Icon icon="solar:trash-bin-trash-outline" className="mr-2" width={15} />
-                          Hapus
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed line-clamp-2">
+                    {article.excerpt || "Tidak ada ringkasan."}
+                  </p>
+
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-400">
+                      {new Date(article.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleEdit(article)}
+                        className="w-8 h-8 rounded-lg border border-gray-200 dark:border-darkborder flex items-center justify-center text-gray-500 hover:text-[#0152EA] hover:border-[#0152EA]"
+                      >
+                        <Icon icon="solar:pen-outline" width={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteId(article.id)}
+                        className="w-8 h-8 rounded-lg border border-gray-200 dark:border-darkborder flex items-center justify-center text-gray-500 hover:text-red-600 hover:border-red-400"
+                      >
+                        <Icon icon="solar:trash-bin-trash-outline" width={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Form Dialog */}
       <ArticleFormDialog

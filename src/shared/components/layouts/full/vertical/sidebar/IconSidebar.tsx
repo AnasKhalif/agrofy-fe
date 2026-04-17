@@ -8,11 +8,16 @@ import { Link } from "react-router";
 import { CustomizerContext } from "@/app/providers";
 
 export const IconSidebar = () => {
-  const { selectedIconId, setSelectedIconId, setIsCollapse, isCollapse } =
-    useContext(CustomizerContext) || {};
+  const customizer = useContext(CustomizerContext);
+
+  if (!customizer) {
+    return null;
+  }
+
+  const { selectedIconId, setSelectedIconId, setIsCollapse, isCollapse } = customizer;
 
   // Handle icon click
-  const handleClick = (id: any) => {
+  const handleClick = (id: number) => {
     setSelectedIconId(id);
     setIsCollapse("full-sidebar");
   };

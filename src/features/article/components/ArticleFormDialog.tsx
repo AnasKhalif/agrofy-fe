@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Icon } from "@iconify/react";
 import {
@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/agrofy-ui/ui/select";
-import { useCreateArticle, useUpdateArticle } from "@/app/api/article/useArticleApi";
+import { useCreateArticle, useUpdateArticle, useUploadArticleImage } from "@/app/api/article/useArticleApi";
 import { useToast } from "@/shared/hooks";
 import type { Article, CreateArticleRequest } from "@/app/api/article/type";
 
@@ -35,6 +35,7 @@ const CATEGORIES = ["Nutrisi", "Pencegahan", "Penanganan", "Tumbuh Kembang", "Ti
 const ArticleFormDialog = ({ open, onClose, article }: Props) => {
   const toast = useToast();
   const isEdit = !!article;
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateArticleRequest>({
     defaultValues: { title: "", body: "", category: "", excerpt: "", published: false },
@@ -55,6 +56,7 @@ const ArticleFormDialog = ({ open, onClose, article }: Props) => {
     } else {
       reset({ title: "", body: "", category: "", excerpt: "", published: false });
     }
+    setSelectedImageFile(null);
   }, [article, reset]);
 
   const createMutation = useCreateArticle({
@@ -63,19 +65,36 @@ const ArticleFormDialog = ({ open, onClose, article }: Props) => {
   });
 
   const updateMutation = useUpdateArticle({
-    onSuccess: () => { toast.success("Artikel berhasil diperbarui"); onClose(); },
     onError: () => toast.error("Gagal memperbarui artikel"),
   });
 
-  const onSubmit = (data: CreateArticleRequest) => {
-    if (isEdit && article) {
-      updateMutation.mutate({ id: article.id, data });
-    } else {
-      createMutation.mutate(data);
+  const uploadImageMutation = useUploadArticleImage({
+    onError: () => toast.error("Gagal upload gambar artikel"),
+  });
+
+  const onSubmit = async (data: CreateArticleRequest) => {
+    try {
+      let articleId = article?.id;
+
+      if (isEdit && article) {
+        await updateMutation.mutateAsync({ id: article.id, data });
+      } else {
+        const response = await createMutation.mutateAsync(data);
+        articleId = response.data?.data?.id;
+      }
+
+      if (selectedImageFile && articleId) {
+        await uploadImageMutation.mutateAsync({ id: articleId, file: selectedImageFile });
+      }
+
+      toast.success(isEdit ? "Artikel berhasil diperbarui" : "Artikel berhasil dibuat");
+      onClose();
+    } catch {
+      // Toast error handled at mutation level
     }
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isPending || updateMutation.isPending || uploadImageMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -122,6 +141,23 @@ const ArticleFormDialog = ({ open, onClose, article }: Props) => {
               placeholder="Ringkasan singkat artikel..."
               {...register("excerpt")}
             />
+          </div>
+
+          {/* Image */}
+          <div className="space-y-1.5">
+            <Label htmlFor="image_file">Upload Gambar</Label>
+            <Input
+              id="image_file"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedImageFile(e.target.files?.[0] ?? null)}
+            />
+            {article?.image && !selectedImageFile && (
+              <p className="text-xs text-gray-500">Gambar saat ini sudah tersedia. Pilih file baru jika ingin mengganti.</p>
+            )}
+            {selectedImageFile && (
+              <p className="text-xs text-gray-500">File dipilih: {selectedImageFile.name}</p>
+            )}
           </div>
 
           {/* Konten */}

@@ -1,4 +1,5 @@
 import type { MenuItem } from "./SidebarItems";
+import { PERMISSIONS } from "@/app/constants/permission";
 
 const StuntingParentSidebarContent: MenuItem[] = [
   {
@@ -12,6 +13,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:home-2-outline",
             id: "parent-dashboard",
             url: "/dashboard",
+            permission: PERMISSIONS.DASHBOARD_READ,
           },
         ],
       },
@@ -23,6 +25,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:users-group-rounded-outline",
             id: "parent-children",
             url: "/children",
+            permission: PERMISSIONS.CHILDREN_READ,
           },
         ],
       },
@@ -34,12 +37,14 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:health-outline",
             id: "parent-detection",
             url: "/stunting-detection",
+            permission: PERMISSIONS.STUNTING_CREATE,
           },
           {
             name: "Riwayat Deteksi",
             icon: "solar:history-outline",
             id: "parent-detection-history",
             url: "/detection-history",
+            permission: PERMISSIONS.STUNTING_READ,
           },
         ],
       },
@@ -51,6 +56,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:graph-new-up-outline",
             id: "parent-monitoring",
             url: "/monitoring",
+            permission: PERMISSIONS.MONITORING_READ,
           },
         ],
       },
@@ -62,6 +68,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:chat-round-dots-outline",
             id: "parent-consultation",
             url: "/consultation",
+            permission: PERMISSIONS.CONSULTATIONS_READ,
           },
         ],
       },
@@ -73,6 +80,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:star-outline",
             id: "parent-food-recommendations",
             url: "/food-recommendations",
+            permission: PERMISSIONS.FOODS_READ,
           },
         ],
       },
@@ -84,6 +92,7 @@ const StuntingParentSidebarContent: MenuItem[] = [
             icon: "solar:user-circle-outline",
             id: "parent-profile",
             url: "/profile",
+            permission: PERMISSIONS.PROFILE_READ,
           },
         ],
       },

@@ -13,12 +13,13 @@ interface NavCollapseProps {
 
 
 
-const NavCollapse: React.FC<NavCollapseProps> = ({ item }: any) => {
+const NavCollapse: React.FC<NavCollapseProps> = ({ item }) => {
   const location = useLocation();
   const pathname = location.pathname;
+  const children = item.children ?? [];
 
   // Determine if any child matches the current path
-  const activeDD = item.children.find((t: { url: string }) => t.url === pathname);
+  const activeDD = children.find((child) => child.url === pathname);
   
 
   const { t, i18n } = useTranslation();
@@ -45,7 +46,7 @@ const NavCollapse: React.FC<NavCollapseProps> = ({ item }: any) => {
       label={translatedLabel || `${item.name}`}
       open={isOpen}
       onClick={handleToggle}
-      icon={item.icon} 
+      icon={item.icon ?? ""}
       className={
         activeDD
           ? "!text-white bg-primary rounded-xl hover:bg-primary hover:text-white shadow-btnshdw"
@@ -53,9 +54,9 @@ const NavCollapse: React.FC<NavCollapseProps> = ({ item }: any) => {
       }
     >
       {/* Render child items */}
-      {item.children && (
+      {children.length > 0 && (
         <div className="sidebar-dropdown">
-          {item.children.map((child: any) => (
+          {children.map((child) => (
             <React.Fragment key={child.id}>
               {child.children ? (
                 <NavCollapse item={child} /> // Recursive call for nested collapse

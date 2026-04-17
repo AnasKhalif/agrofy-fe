@@ -1,53 +1,42 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams } from "react-router";
 import { Icon } from "@iconify/react";
-import { useGetRole, useGetPermissions, useUpdateRole, useCreateRole } from "@/app/api/role/useRoleApi";
+import { useGetRole, useGetPermissions, useGetRoles, useUpdateRole, useCreateRole } from "@/app/api/role/useRoleApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { Input } from "@/shared/components/agrofy-ui/ui/input";
 import { useToast } from "@/shared/hooks";
-import type { PermissionItem } from "@/app/api/role/type";
+import { useAuth } from "@/app/auth";
+import { apiService } from "@/app/services/apiService";
+import type { PermissionItem, RoleItem } from "@/app/api/role/type";
+import type { MenuItem } from "@/app/router/SidebarItems";
+import SuperAdminSidebarContent from "@/app/router/SuperAdminSidebarItems";
+import AdminSidebarContent from "@/app/router/AdminSidebarItems";
+import DoctorSidebarContent from "@/app/router/DoctorSidebarItems";
+import StuntingParentSidebarContent from "@/app/router/StuntingParentSidebarItems";
 
-// ─── Exclusive Permissions ────────────────────────────────────────────────────
+const ROLE_NAME_ALIASES: Record<string, string> = {
+  super_admin: "superadmin",
+  orangtua: "orang_tua",
+};
 
-const EXCLUSIVE_PERMISSIONS = [
-  {
-    name: "role-dokter",
-    label: "Dokter",
-    description: "Akses khusus untuk tenaga medis yang menangani konsultasi",
-    icon: "solar:stethoscope-outline",
-  },
-  {
-    name: "role-admin",
-    label: "Admin",
-    description: "Akses khusus untuk admin pengelola konten dan data",
-    icon: "solar:user-check-rounded-outline",
-  },
-  {
-    name: "role-superadmin",
-    label: "Super Admin",
-    description: "Akses penuh ke seluruh fitur dan konfigurasi sistem",
-    icon: "solar:shield-user-outline",
-  },
-  {
-    name: "role-orang_tua",
-    label: "Orang Tua",
-    description: "Akses untuk memantau tumbuh kembang dan deteksi stunting anak",
-    icon: "solar:users-group-rounded-outline",
-  },
-];
+const ROLE_ICON_MAP: Record<string, string> = {
+  superadmin: "solar:shield-user-outline",
+  admin: "solar:user-check-rounded-outline",
+  dokter: "solar:stethoscope-outline",
+  healthworker: "solar:stethoscope-outline",
+  user: "solar:users-group-rounded-outline",
+  orang_tua: "solar:users-group-rounded-outline",
+};
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const ROLE_SORT_ORDER = ["superadmin", "admin", "dokter", "healthworker", "user", "orang_tua"];
 
-const MODULE_LABELS: Record<string, string> = {
-  articles: "Artikel",
-  dashboard: "Dashboard",
+const MODULE_LABEL_ALIASES: Record<string, string> = {
+  children: "Pasien / Data Anak",
+  consultations: "Konsultasi",
+  foods: "Makanan",
+  stunting: "Deteksi Stunting",
   users: "Manajemen Pengguna",
   roles: "Role & Permission",
-  children: "Data Anak",
-  stunting: "Deteksi Stunting",
-  consultation: "Konsultasi",
-  monitoring: "Monitoring",
-  recommendation: "Rekomendasi",
 };
 
 const ACTIONS = ["select", "create", "read", "update", "delete", "restore"];
@@ -62,6 +51,74 @@ interface PermissionGroup {
   row: Record<string, string | null>; // action → permName | null
 }
 
+interface ExclusiveRoleOption {
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
+}
+
+const toTitleCase = (value: string): string =>
+  value
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const getRoleIcon = (roleName: string): string => {
+  const normalized = roleName.toLowerCase().replace(/[^a-z0-9_]+/g, "");
+  return ROLE_ICON_MAP[normalized] ?? "solar:shield-check-outline";
+};
+
+const extractModuleLabel = (permission: PermissionItem, fallbackModule: string): string => {
+  if (MODULE_LABEL_ALIASES[fallbackModule]) {
+    return MODULE_LABEL_ALIASES[fallbackModule];
+  }
+
+  const raw = permission.display_name?.trim();
+  if (!raw) {
+    return toTitleCase(fallbackModule);
+  }
+
+  const actionPrefixPattern = /^(select|create|read|update|delete|restore|pilih|buat|baca|ubah|hapus|kembalikan)\s+/i;
+  const cleaned = raw.replace(actionPrefixPattern, "").trim();
+
+  return cleaned || toTitleCase(fallbackModule);
+};
+
+const extractModuleFromPermissionName = (permissionName: string): string | null => {
+  const dashIdx = permissionName.lastIndexOf("-");
+  const dotIdx = permissionName.lastIndexOf(".");
+
+  for (const idx of [dashIdx, dotIdx]) {
+    if (idx === -1) continue;
+    const action = permissionName.slice(idx + 1);
+    if (ACTIONS.includes(action)) {
+      return permissionName.slice(0, idx);
+    }
+  }
+
+  return null;
+};
+
+const collectModulesFromSidebar = (sidebarContent: MenuItem[]): Set<string> => {
+  const modules = new Set<string>();
+
+  sidebarContent.forEach((section) => {
+    section.items?.forEach((item) => {
+      item.children?.forEach((child) => {
+        if (!child.permission) return;
+        const moduleName = extractModuleFromPermissionName(child.permission);
+        if (moduleName) {
+          modules.add(moduleName);
+        }
+      });
+    });
+  });
+
+  return modules;
+};
+
 /**
  * Supports both formats:
  *   "articles-create"  (laratrust default, dash separator)
@@ -69,6 +126,7 @@ interface PermissionGroup {
  */
 function groupPermissions(permissions: PermissionItem[]): PermissionGroup[] {
   const groups: Record<string, Record<string, string>> = {};
+  const labels: Record<string, string> = {};
 
   permissions.forEach((p) => {
     const dashIdx = p.name.lastIndexOf("-");
@@ -90,14 +148,17 @@ function groupPermissions(permissions: PermissionItem[]): PermissionGroup[] {
 
     if (!groups[module]) groups[module] = {};
     groups[module][action] = p.name;
+
+    if (!labels[module]) {
+      labels[module] = extractModuleLabel(p, module);
+    }
   });
 
   return Object.entries(groups)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([module, perms]) => ({
       module,
-      label: MODULE_LABELS[module]
-        ?? module.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      label: labels[module] ?? toTitleCase(module),
       row: Object.fromEntries(ACTIONS.map((a) => [a, perms[a] ?? null])),
     }));
 }
@@ -108,47 +169,241 @@ const RoleEditPage = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { refreshUser, user } = useAuth();
   const isEdit = !!id;
 
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Exclusive permissions: UI-only, persisted in localStorage per role
-  const exclusiveKey = `exclusive_perms_${id ?? "new"}`;
-  const [selectedExclusive, setSelectedExclusive] = useState<Set<string>>(
-    () => new Set(JSON.parse(localStorage.getItem(exclusiveKey) ?? "[]"))
-  );
+  const [selectedExclusiveRoles, setSelectedExclusiveRoles] = useState<Set<string>>(new Set());
 
   const { data: roleData, isLoading: roleLoading } = useGetRole(parseInt(id ?? "0"), {
     enabled: isEdit,
   });
   const { data: permsData, isLoading: permsLoading } = useGetPermissions();
+  const { data: rolesData, isLoading: rolesLoading } = useGetRoles();
 
   const role = roleData?.data?.data;
   const allPermissions: PermissionItem[] = permsData?.data?.data ?? [];
+  const allRoles: RoleItem[] = rolesData?.data?.data ?? [];
   const groups = groupPermissions(allPermissions);
 
-  useEffect(() => {
-    if (role) {
-      setDisplayName(role.display_name ?? "");
-      setDescription(role.description ?? "");
-      setSelected(new Set(role.permissions ?? []));
-    }
-  }, [role]);
+  function normalizeRoleName(rawName: string): string {
+    const normalized = rawName.toLowerCase().trim().replace(/\s+/g, "_");
+    return ROLE_NAME_ALIASES[normalized] ?? normalized;
+  }
 
-  // Persist exclusive selection to localStorage
+  const roleByName = useMemo(() => {
+    return new Map(allRoles.map((item) => [item.name, item]));
+  }, [allRoles]);
+
+  const roleMenuModules = useMemo(() => {
+    return new Map<string, Set<string>>([
+      ["superadmin", collectModulesFromSidebar(SuperAdminSidebarContent)],
+      ["admin", collectModulesFromSidebar(AdminSidebarContent)],
+      ["dokter", collectModulesFromSidebar(DoctorSidebarContent)],
+      ["healthworker", collectModulesFromSidebar(DoctorSidebarContent)],
+      ["user", collectModulesFromSidebar(StuntingParentSidebarContent)],
+      ["orang_tua", collectModulesFromSidebar(StuntingParentSidebarContent)],
+      ["orangtua", collectModulesFromSidebar(StuntingParentSidebarContent)],
+      ["parent", collectModulesFromSidebar(StuntingParentSidebarContent)],
+    ]);
+  }, []);
+
+  const exclusiveRoleOptions: ExclusiveRoleOption[] = useMemo(() => {
+    const options = allRoles
+      .filter((item) => (item.permissions ?? []).length > 0)
+      .map((item) => {
+        const normalized = normalizeRoleName(item.name);
+        return {
+          key: item.name,
+          label: item.display_name?.trim() || toTitleCase(item.name),
+          description: item.description?.trim() || `Template permission untuk role ${toTitleCase(item.name)}`,
+          icon: getRoleIcon(normalized),
+        };
+      });
+
+    return options.sort((a, b) => {
+      const indexA = ROLE_SORT_ORDER.indexOf(normalizeRoleName(a.key));
+      const indexB = ROLE_SORT_ORDER.indexOf(normalizeRoleName(b.key));
+
+      if (indexA === -1 && indexB === -1) return a.label.localeCompare(b.label);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  }, [allRoles]);
+
+  const getTemplatePermissions = (templateKey: string | null): string[] => {
+    if (!templateKey) return [];
+
+    const template = roleByName.get(templateKey)?.permissions ?? [];
+
+    const availableNames = new Set(allPermissions.map((permission) => permission.name));
+    return template.filter((permissionName) => availableNames.has(permissionName));
+  };
+
+  const visibleModuleNames = useMemo<Set<string> | null>(() => {
+    if (selectedExclusiveRoles.size === 0) {
+      return null;
+    }
+
+    const modules = new Set<string>();
+
+    const baselineRole = role?.name ? normalizeRoleName(role.name) : null;
+    if (baselineRole) {
+      roleMenuModules.get(baselineRole)?.forEach((moduleName) => modules.add(moduleName));
+    }
+
+    Array.from(selectedExclusiveRoles).forEach((roleKey) => {
+      const normalizedRoleKey = normalizeRoleName(roleKey);
+      roleMenuModules.get(normalizedRoleKey)?.forEach((moduleName) => modules.add(moduleName));
+    });
+
+    selected.forEach((permissionName) => {
+      const moduleName = extractModuleFromPermissionName(permissionName);
+      if (moduleName) {
+        modules.add(moduleName);
+      }
+    });
+
+    return modules;
+  }, [selectedExclusiveRoles, selected, role?.name, roleMenuModules]);
+
+  const visibleGroups = useMemo(() => {
+    if (!visibleModuleNames) {
+      return groups;
+    }
+
+    return groups.filter((group) => visibleModuleNames.has(group.module));
+  }, [groups, visibleModuleNames]);
+
+  const selectablePermissionNames = useMemo(() => {
+    if (!visibleModuleNames) {
+      return allPermissions.map((permission) => permission.name);
+    }
+
+    return visibleGroups.flatMap((group) =>
+      ACTIONS
+        .map((action) => group.row[action])
+        .filter((permissionName): permissionName is string => !!permissionName)
+    );
+  }, [allPermissions, visibleModuleNames, visibleGroups]);
+
   useEffect(() => {
-    localStorage.setItem(exclusiveKey, JSON.stringify(Array.from(selectedExclusive)));
-  }, [selectedExclusive, exclusiveKey]);
+    if (!role) return;
+
+    setDisplayName(role.display_name ?? "");
+    setDescription(role.description ?? "");
+
+    const rolePermissions = new Set(role.permissions ?? []);
+    setSelected(new Set(role.permissions ?? []));
+
+    const inferredExclusive = new Set<string>();
+    const roleName = normalizeRoleName(role.name ?? "");
+
+    if (roleName === "superadmin") {
+      const accountRoles = Array.isArray(user?.roles) ? user.roles : [];
+      const normalizedAccountRoles = new Set(accountRoles.map((name) => normalizeRoleName(name)));
+
+      if (normalizedAccountRoles.has("superadmin") && roleByName.has("superadmin")) {
+        inferredExclusive.add("superadmin");
+      }
+      if (normalizedAccountRoles.has("admin") && roleByName.has("admin")) {
+        inferredExclusive.add("admin");
+      }
+      if (
+        (normalizedAccountRoles.has("dokter") && roleByName.has("dokter"))
+        || (normalizedAccountRoles.has("healthworker") && roleByName.has("healthworker"))
+      ) {
+        inferredExclusive.add("dokter");
+      }
+      if (
+        (normalizedAccountRoles.has("user") && roleByName.has("user"))
+        || normalizedAccountRoles.has("orangtua")
+        || normalizedAccountRoles.has("parent")
+      ) {
+        inferredExclusive.add("user");
+      }
+
+      if (inferredExclusive.size > 0) {
+        setSelectedExclusiveRoles(inferredExclusive);
+        return;
+      }
+    }
+
+    if (roleByName.has(role.name)) {
+      inferredExclusive.add(role.name);
+      setSelectedExclusiveRoles(inferredExclusive);
+      return;
+    }
+
+    exclusiveRoleOptions.forEach((option) => {
+      const template = roleByName.get(option.key)?.permissions ?? [];
+
+      const requiredPermissions = template.filter((permissionName) =>
+        allPermissions.some((permission) => permission.name === permissionName)
+      );
+
+      if (requiredPermissions.length === 0) {
+        return;
+      }
+
+      const allRequiredPresent = requiredPermissions.every((permissionName) =>
+        rolePermissions.has(permissionName)
+      );
+
+      const noUnexpectedPermissions = Array.from(rolePermissions).every((permissionName) =>
+        requiredPermissions.includes(permissionName)
+      );
+
+      if (allRequiredPresent && noUnexpectedPermissions) {
+        inferredExclusive.add(option.key);
+      }
+    });
+
+    setSelectedExclusiveRoles(inferredExclusive);
+  }, [role, allPermissions, roleByName, exclusiveRoleOptions, user?.roles]);
 
   const updateMutation = useUpdateRole({
-    onSuccess: () => { toast.success("Role berhasil diperbarui"); navigate("/roles"); },
+    onSuccess: async () => {
+      const editedRoleName = normalizeRoleName(role?.name ?? displayName);
+
+      if (editedRoleName === "superadmin") {
+        try {
+          const currentRoleName = user?.role
+            ? (typeof user.role === "string" ? user.role : user.role.name)
+            : "";
+
+          if (normalizeRoleName(currentRoleName) === "superadmin") {
+            const selectedKeys = new Set(selectedExclusiveRoles);
+            selectedKeys.add("superadmin");
+
+            const dbRoles = Array.from(selectedKeys).filter(Boolean);
+
+            await apiService.post("/api/v1/profile/sync-roles", {
+              roles: dbRoles,
+            });
+          }
+        } catch {
+          toast.error("Role diperbarui, tetapi sinkronisasi role akun gagal");
+        }
+      }
+
+      await refreshUser();
+      toast.success("Role berhasil diperbarui");
+      navigate("/roles");
+    },
     onError: () => toast.error("Gagal memperbarui role"),
   });
 
   const createMutation = useCreateRole({
-    onSuccess: () => { toast.success("Role berhasil dibuat"); navigate("/roles"); },
+    onSuccess: async () => {
+      await refreshUser();
+      toast.success("Role berhasil dibuat");
+      navigate("/roles");
+    },
     onError: () => toast.error("Gagal membuat role"),
   });
 
@@ -163,23 +418,95 @@ const RoleEditPage = () => {
   };
 
   const toggleAll = () => {
-    if (selected.size === allPermissions.length) setSelected(new Set());
-    else setSelected(new Set(allPermissions.map((p) => p.name)));
+    const areAllSelectableChecked = selectablePermissionNames.length > 0
+      && selectablePermissionNames.every((permissionName) => selected.has(permissionName));
+
+    if (areAllSelectableChecked) {
+      setSelected((prevSelected) => {
+        const nextSelected = new Set(prevSelected);
+        selectablePermissionNames.forEach((permissionName) => nextSelected.delete(permissionName));
+        return nextSelected;
+      });
+      return;
+    }
+
+    setSelected((prevSelected) => new Set([...prevSelected, ...selectablePermissionNames]));
   };
 
   const handleSubmit = () => {
     if (!displayName.trim()) { toast.error("Nama role tidak boleh kosong"); return; }
+
+    const normalizedName = normalizeRoleName(displayName);
+    const roleName = isEdit ? (role?.name ?? normalizedName) : normalizedName;
+
     const payload = {
       display_name: displayName,
-      name: displayName.toLowerCase().replace(/\s+/g, "_"),
+      name: roleName,
       description,
       permissions: Array.from(selected),
+      exclusive_roles: Array.from(selectedExclusiveRoles),
     };
     if (isEdit) updateMutation.mutate({ id: parseInt(id!), data: payload });
     else createMutation.mutate(payload);
   };
 
-  const isLoading = (isEdit && roleLoading) || permsLoading;
+  const handleSelectExclusive = (templateKey: string) => {
+    const isChecked = selectedExclusiveRoles.has(templateKey);
+
+    setSelectedExclusiveRoles((prev) => {
+      const next = new Set(prev);
+
+      if (isChecked) {
+        next.delete(templateKey);
+
+        const removedTemplatePermissions = new Set(getTemplatePermissions(templateKey));
+        const retainedTemplatePermissions = new Set(
+          Array.from(next).flatMap((key) => getTemplatePermissions(key))
+        );
+
+        setSelected((prevSelected) => {
+          const nextSelected = new Set(prevSelected);
+          removedTemplatePermissions.forEach((permissionName) => {
+            if (!retainedTemplatePermissions.has(permissionName)) {
+              nextSelected.delete(permissionName);
+            }
+          });
+          return nextSelected;
+        });
+      } else {
+        next.add(templateKey);
+        const templatePermissions = getTemplatePermissions(templateKey);
+        setSelected((prevSelected) => new Set([...prevSelected, ...templatePermissions]));
+      }
+
+      return next;
+    });
+  };
+
+  const handleSelectAllExclusive = () => {
+    const allSelected = selectedExclusiveRoles.size === exclusiveRoleOptions.length;
+
+    if (allSelected) {
+      setSelectedExclusiveRoles(new Set());
+      const allTemplatePermissions = new Set(
+        exclusiveRoleOptions.flatMap((item) => getTemplatePermissions(item.key))
+      );
+      setSelected((prevSelected) => {
+        const nextSelected = new Set(prevSelected);
+        allTemplatePermissions.forEach((permissionName) => nextSelected.delete(permissionName));
+        return nextSelected;
+      });
+      return;
+    }
+
+    const allKeys = exclusiveRoleOptions.map((item) => item.key);
+    setSelectedExclusiveRoles(new Set(allKeys));
+
+    const mergedTemplatePermissions = allKeys.flatMap((key) => getTemplatePermissions(key));
+    setSelected((prev) => new Set([...prev, ...mergedTemplatePermissions]));
+  };
+
+  const isLoading = (isEdit && roleLoading) || permsLoading || rolesLoading;
 
   return (
     <div className="p-6 space-y-6">
@@ -250,54 +577,54 @@ const RoleEditPage = () => {
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-gray-500">{selected.size} / {allPermissions.length} dipilih</span>
                 <button onClick={toggleAll} className="text-[#0152EA] hover:underline font-medium">
-                  {selected.size === allPermissions.length ? "Hapus Semua" : "Pilih Semua"}
+                  {selectablePermissionNames.length > 0 && selectablePermissionNames.every((permissionName) => selected.has(permissionName))
+                    ? "Hapus Semua"
+                    : "Pilih Semua"}
                 </button>
               </div>
             </div>
 
-            {/* Exclusive Permissions Cards — UI only, tidak dikirim ke backend */}
             <div className="p-4 bg-gray-50 dark:bg-darkminisidebar rounded-xl border border-gray-200 dark:border-darkborder space-y-3">
-              <p className="text-sm font-semibold text-[#0152EA]">Hak Akses Khusus (Exclusive Permissions)</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[#0152EA]">Hak Akses Khusus (Exclusive Role)</p>
+                <button
+                  type="button"
+                  onClick={handleSelectAllExclusive}
+                  className="text-xs text-[#0152EA] hover:underline font-medium"
+                >
+                  {selectedExclusiveRoles.size === exclusiveRoleOptions.length ? "Hapus Semua Role" : "Pilih Semua Role"}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Centang satu atau lebih role untuk auto-terapkan permission bawaan role tersebut.
+              </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {EXCLUSIVE_PERMISSIONS.map((ep) => {
-                  const isChecked = selectedExclusive.has(ep.name);
-                  const toggle = () => setSelectedExclusive((prev) => {
-                    const next = new Set(prev);
-                    next.has(ep.name) ? next.delete(ep.name) : next.add(ep.name);
-                    return next;
-                  });
+                {exclusiveRoleOptions.map((item) => {
+                  const active = selectedExclusiveRoles.has(item.key);
                   return (
                     <div
-                      key={ep.name}
-                      onClick={toggle}
-                      className={`p-3 bg-white dark:bg-darkgray rounded-xl cursor-pointer transition-all border-2 ${
-                        isChecked
-                          ? "border-[#0152EA] shadow-sm shadow-blue-100"
-                          : "border-gray-200 dark:border-darkborder hover:border-blue-300"
+                      key={item.key}
+                      onClick={() => handleSelectExclusive(item.key)}
+                      className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                        active
+                          ? "border-[#0152EA] bg-blue-50 dark:bg-blue-900/20"
+                          : "border-gray-200 dark:border-darkborder bg-white dark:bg-darkgray hover:border-blue-300"
                       }`}
                     >
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2 mb-1">
                         <input
                           type="checkbox"
-                          checked={isChecked}
-                          onChange={toggle}
-                          className="mt-0.5 w-4 h-4 rounded accent-[#0152EA] flex-shrink-0"
+                          checked={active}
+                          onChange={() => handleSelectExclusive(item.key)}
+                          className="mt-0.5 w-4 h-4 rounded accent-[#0152EA]"
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <Icon
-                              icon={ep.icon}
-                              width={16}
-                              className={isChecked ? "text-[#0152EA]" : "text-gray-500"}
-                            />
-                            <span className={`text-sm font-semibold ${isChecked ? "text-[#0152EA]" : "text-gray-700 dark:text-gray-300"}`}>
-                              {ep.label}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 leading-snug">{ep.description}</p>
-                        </div>
+                        <Icon icon={item.icon} width={16} className={active ? "text-[#0152EA]" : "text-gray-500"} />
+                        <span className={`text-sm font-semibold ${active ? "text-[#0152EA]" : "text-gray-700 dark:text-gray-300"}`}>
+                          {item.label}
+                        </span>
                       </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{item.description}</p>
                     </div>
                   );
                 })}
@@ -325,7 +652,7 @@ const RoleEditPage = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {groups.map((group) => (
+                    {visibleGroups.map((group) => (
                       <tr
                         key={group.module}
                         className="border-t border-gray-100 dark:border-darkborder"

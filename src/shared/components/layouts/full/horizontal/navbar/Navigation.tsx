@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 import Menuitems from '../../../../../../app/router/TopbarItems';
 import { Link, useLocation } from "react-router";
 import { usePermission } from '@/shared/hooks';
+import type { TopbarMenuItem, TopbarChildItem } from '@/app/router/TopbarItems';
 
 const Navigation = () => {
   const { hasPermission } = usePermission();
@@ -13,7 +14,7 @@ const Navigation = () => {
   const pathname = location.pathname;
 
   // Filter menu items by permissions
-  const filteredMenuitems = useMemo(() => {
+  const filteredMenuitems = useMemo<TopbarMenuItem[]>(() => {
     return Menuitems.map(item => ({
       ...item,
       children: item.children?.filter(child => {
@@ -25,10 +26,10 @@ const Navigation = () => {
     })).filter(item => item.children && item.children.length > 0);
   }, [hasPermission]);
 
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [active, setActive] = useState(filteredMenuitems[0]?.id);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [active, setActive] = useState<string | undefined>(filteredMenuitems[0]?.id);
 
-  const handleDropdownEnter = (itemId: any) => {
+  const handleDropdownEnter = (itemId: string) => {
     setActiveDropdown(itemId);
     setActive(itemId);
   };
@@ -37,24 +38,25 @@ const Navigation = () => {
     setActiveDropdown(null);
   };
 
-  const handleChildClick = (parentId: any) => {
+  const handleChildClick = (parentId: string) => {
     setActive(parentId);
+  };
+
+  const isItemActive = (children: TopbarChildItem[]): boolean => {
+    return children.some((child) => {
+      if (child.children && child.children.length > 0) {
+        return isItemActive(child.children);
+      }
+
+      return child.href === pathname;
+    });
   };
   return (
     <Navbar fluid={true} rounded={true} className="horizontal-nav bg-transparent dark:bg-transparent sm:px-0 xl:py-4 py-0">
       <Navbar.Collapse className="xl:block">
         <ul className="flex items-center space-x-3">
           {filteredMenuitems.map((item) => {
-            let isActive = false;
-             item.children.find((item:any) => {
-              if(item?.children){
-                let nestedvalue =  item.children.find((value:any) => value.href === pathname);
-                if(nestedvalue){isActive = true}
-              }else{
-                let value = item.href === pathname;
-                if(value){isActive = true}
-              }
-            })
+            const isActive = isItemActive(item.children);
             return (
               <li key={item.id} className="relative group">
               {item.children ? (

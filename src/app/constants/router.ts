@@ -33,26 +33,32 @@ export const ROUTES = {
 
   // Doctor Routes
   DOCTOR: {
+    DASHBOARD: "/doctor/dashboard",
     CONSULTATION: "/doctor/consultation",
     PATIENTS: "/doctor/patients",
+    MONITORING: "/doctor/monitoring",
+    FOODS: "/doctor/foods",
     PROFILE: "/doctor/profile",
   },
 
   // Admin Routes
   ADMIN: {
     DASHBOARD: "/admin/dashboard",
-    ARTICLES: "/admin/articles",
-    USERS: "/admin/users",
-    CHILDREN: "/admin/children",
+    ARTICLES: "/articles",
+    FAQS: "/faqs",
+    FOODS: "/foods",
+    USERS: "/users",
+    CHILDREN: "/children",
     REPORTS: "/admin/reports",
   },
 
   // Super Admin Routes
   SUPER_ADMIN: {
-    DASHBOARD: "/super-admin/dashboard",
+    DASHBOARD: "/dashboard",
     USERS: "/super-admin/users",
     ROLES: "/super-admin/roles",
     CONFIGURATION: "/super-admin/configuration",
+    LOG_SYSTEM: "/log-system",
   },
 
   // Error Routes

@@ -14,7 +14,8 @@ import {
   Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useGetConsultations } from "@/app/api/consultation/useConsultationApi";
 
 interface Doctor {
   id: string;
@@ -23,18 +24,13 @@ interface Doctor {
   count: number;
 }
 
-const sampleDoctors: Doctor[] = [
-  { id: "1", name: "Dr. Ahmad", specialty: "Ahli Bedah", count: 100 },
-  { id: "2", name: "Dr. Siti", specialty: "Kecantikan", count: 80 },
-  { id: "3", name: "Dr. Budi", specialty: "Kecantikan", count: 42 },
-  { id: "4", name: "Dr. Linda", specialty: "Kecantikan", count: 33 },
-];
-
 export default function TopDoctor() {
   const theme = useTheme();
+  const { data: consultationsData } = useGetConsultations();
   const now = new Date();
   const currentMonthValue = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthValue);
+  const consultations = consultationsData?.data?.data ?? [];
 
   const monthNames = [
     "Januari",
@@ -50,6 +46,44 @@ export default function TopDoctor() {
     "November",
     "Desember",
   ];
+
+  const topDoctors = useMemo<Doctor[]>(() => {
+    const [monthStr, yearStr] = selectedMonth.split("-");
+    const month = Number(monthStr);
+    const year = Number(yearStr);
+
+    const grouped = new Map<number, { name: string; parentIds: Set<number> }>();
+
+    consultations.forEach((consultation) => {
+      const date = new Date(consultation.created_at);
+      if (date.getFullYear() !== year || date.getMonth() + 1 !== month) return;
+
+      const doctorId = Number(consultation.health_worker_id);
+      const parentId = Number(consultation.parent_id);
+      if (Number.isNaN(doctorId) || Number.isNaN(parentId)) return;
+
+      const existing = grouped.get(doctorId);
+      if (!existing) {
+        grouped.set(doctorId, {
+          name: consultation.health_worker?.name ?? `Dokter #${doctorId}`,
+          parentIds: new Set([parentId]),
+        });
+        return;
+      }
+
+      existing.parentIds.add(parentId);
+    });
+
+    return Array.from(grouped.entries())
+      .map(([id, value]) => ({
+        id: String(id),
+        name: value.name,
+        specialty: "Dokter",
+        count: value.parentIds.size,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [consultations, selectedMonth]);
 
   return (
     <Card
@@ -117,7 +151,11 @@ export default function TopDoctor() {
 
         <Box>
           <List disablePadding>
-            {sampleDoctors.map((d, idx) => (
+            {topDoctors.length === 0 ? (
+              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, py: 2 }}>
+                Belum ada data konsultasi pada bulan ini.
+              </Typography>
+            ) : topDoctors.map((d, idx) => (
               <ListItem
                 key={d.id}
                 sx={{
@@ -125,7 +163,7 @@ export default function TopDoctor() {
                   px: 0,
                   alignItems: "center",
                   borderBottom:
-                    idx < sampleDoctors.length - 1
+                    idx < topDoctors.length - 1
                       ? `1px solid ${theme.palette.divider}`
                       : "none",
                 }}

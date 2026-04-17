@@ -9,9 +9,10 @@ export interface Permission {
 export interface Role {
   id: string;
   name: string;
-  label: string;
-  description: string;
-  is_active: boolean;
+  label?: string;
+  display_name?: string;
+  description?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
   permissions?: string[];
@@ -74,6 +75,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  roles?: string[];
   role: Role | string | null;
   company: Company | null;
   is_active: boolean;

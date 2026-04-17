@@ -15,7 +15,13 @@ const NavItems: React.FC<NavItemsProps> = ({ item }) => {
   const pathname = location.pathname;
   const { t } = useTranslation();
 
-  const { setIsMobileSidebarOpen } = useContext(DashboardContext);
+  const dashboard = useContext(DashboardContext);
+
+  if (!dashboard) {
+    return null;
+  }
+
+  const { setIsMobileSidebarOpen } = dashboard;
   return (
     <>
       <Sidebar.Item

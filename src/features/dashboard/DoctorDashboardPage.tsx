@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetDoctorDashboard } from "@/app/api/dashboard/useDashboardApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";

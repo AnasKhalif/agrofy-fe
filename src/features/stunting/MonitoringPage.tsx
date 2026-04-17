@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useGetChildren } from "@/app/api/child/useChildApi";
 import { useGetStuntingHistory } from "@/app/api/stunting/useStuntingApi";
+import type { StuntingResult } from "@/app/api/stunting/type";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/agrofy-ui/ui/select";
 
@@ -14,21 +15,83 @@ const STATUS_COLORS: Record<string, string> = {
   'tinggi':           'text-blue-600 bg-blue-100',
 };
 
+const normalizeHistory = (raw: unknown): StuntingResult[] => {
+  if (Array.isArray(raw)) {
+    return raw as StuntingResult[];
+  }
+
+  if (raw && typeof raw === "object" && Array.isArray((raw as { data?: unknown }).data)) {
+    return (raw as { data: StuntingResult[] }).data;
+  }
+
+  return [];
+};
+
 
 const MonitoringPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedChildId, setSelectedChildId] = useState<string>(searchParams.get("child_id") ?? "");
+  const queryChildId = searchParams.get("child_id") ?? "";
+  const [selectedChildId, setSelectedChildId] = useState<string>(queryChildId);
 
   const { data: childrenData } = useGetChildren();
   const children = childrenData?.data?.data ?? [];
 
+  const sortedChildren = useMemo(
+    () => [...children].sort((a, b) => a.name.localeCompare(b.name)),
+    [children]
+  );
+
+  useEffect(() => {
+    if (queryChildId && queryChildId !== selectedChildId) {
+      setSelectedChildId(queryChildId);
+    }
+  }, [queryChildId, selectedChildId]);
+
+  const { data: allHistoryData } = useGetStuntingHistory(undefined, {
+    enabled: sortedChildren.length > 0,
+  });
+
+  const allHistory = normalizeHistory(allHistoryData?.data?.data);
+
+  const preferredChildIdWithHistory = useMemo(() => {
+    if (!sortedChildren.length || !allHistory.length) {
+      return null;
+    }
+
+    const latestByChild = new Map<number, number>();
+
+    allHistory.forEach((item) => {
+      const childId = Number(item.child_id);
+      const ts = new Date(item.measurement_date).getTime();
+      const prev = latestByChild.get(childId) ?? 0;
+      if (!Number.isNaN(ts) && ts > prev) {
+        latestByChild.set(childId, ts);
+      }
+    });
+
+    const candidates = sortedChildren
+      .map((child) => ({ childId: child.id, ts: latestByChild.get(child.id) ?? 0 }))
+      .filter((entry) => entry.ts > 0)
+      .sort((a, b) => b.ts - a.ts);
+
+    return candidates.length > 0 ? candidates[0].childId.toString() : null;
+  }, [sortedChildren, allHistory]);
+
+  useEffect(() => {
+    if (!selectedChildId && sortedChildren.length > 0) {
+      const fallbackChildId = preferredChildIdWithHistory ?? sortedChildren[0].id.toString();
+      setSelectedChildId(fallbackChildId);
+      setSearchParams({ child_id: fallbackChildId }, { replace: true });
+    }
+  }, [selectedChildId, sortedChildren, preferredChildIdWithHistory, setSearchParams]);
+
   const { data: historyData, isLoading } = useGetStuntingHistory(
     selectedChildId ? { child_id: parseInt(selectedChildId) } : undefined
   );
-  const history = historyData?.data?.data ?? [];
+  const history = normalizeHistory(historyData?.data?.data);
 
-  const selectedChild = children.find(c => c.id.toString() === selectedChildId);
+  const selectedChild = sortedChildren.find(c => c.id.toString() === selectedChildId);
   const chartData = [...history].sort((a, b) => new Date(a.measurement_date).getTime() - new Date(b.measurement_date).getTime());
 
   // Pad to at least 2 points for LineChart (duplicate if only 1)
@@ -41,9 +104,11 @@ const MonitoringPage = () => {
   );
   const heightSeries = padded.map(d => Number(d.height));
   const zScoreSeries = chartData.map(d => Number(d.z_score));
-  const zDateLabels = chartData.map(d =>
-    new Date(d.measurement_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })
-  );
+
+  const handleChildChange = (value: string) => {
+    setSelectedChildId(value);
+    setSearchParams({ child_id: value }, { replace: true });
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -62,12 +127,12 @@ const MonitoringPage = () => {
       {/* Pilih Anak */}
       <div className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder p-4">
         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pilih Anak</p>
-        <Select value={selectedChildId} onValueChange={setSelectedChildId}>
+        <Select value={selectedChildId} onValueChange={handleChildChange}>
           <SelectTrigger className="w-full max-w-sm">
             <SelectValue placeholder="Pilih anak untuk monitoring..." />
           </SelectTrigger>
           <SelectContent>
-            {children.map(c => (
+            {sortedChildren.map(c => (
               <SelectItem key={c.id} value={c.id.toString()}>
                 {c.name} · {c.age_in_months} bulan
               </SelectItem>

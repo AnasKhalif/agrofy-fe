@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import AuthLogin from "./components/forms/AuthLogin";
 import LeftSidebarPart from "./components/LeftSidebarPart";
 import Bgimg from "@/assets/images/backgrounds/auth-bg.png";

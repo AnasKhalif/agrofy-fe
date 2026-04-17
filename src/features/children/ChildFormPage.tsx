@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router";
+import { useForm, useWatch } from "react-hook-form";
 import { Icon } from "@iconify/react";
 import { useGetChild, useCreateChild, useUpdateChild } from "@/app/api/child/useChildApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
@@ -19,8 +19,8 @@ const ChildFormPage = () => {
   const { data: childData, isLoading } = useGetChild(uuid ?? "", { enabled: isEdit });
   const child = childData?.data?.data;
 
-  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<CreateChildRequest>();
-  const gender = watch("gender");
+  const { register, handleSubmit, setValue, control, reset, formState: { errors } } = useForm<CreateChildRequest>();
+  const gender = useWatch({ control, name: "gender" });
 
   useEffect(() => {
     if (child && isEdit) {

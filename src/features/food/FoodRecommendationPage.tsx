@@ -1,7 +1,30 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react";
-import { useGetFoods } from "@/app/api/food/useFoodApi";
-import type { FoodItem } from "@/app/api/food/foodApi";
+import { useGetFoods, useCreateFood, useDeleteFood, useUpdateFood } from "@/app/api/food/useFoodApi";
+import type { CreateFoodRequest, FoodItem } from "@/app/api/food/foodApi";
+import { usePermission, useToast } from "@/shared/hooks";
+import { PERMISSIONS } from "@/app/constants/permission";
+import { Button } from "@/shared/components/agrofy-ui/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/agrofy-ui/ui/dialog";
+import { Input } from "@/shared/components/agrofy-ui/ui/input";
+import { Label } from "@/shared/components/agrofy-ui/ui/label";
+import { Textarea } from "@/shared/components/agrofy-ui/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/components/agrofy-ui/ui/alert-dialog";
 
 const CATEGORY_COLORS: Record<string, string> = {
   umum:     'bg-blue-100 text-blue-700',
@@ -112,7 +135,19 @@ const STIMULASI_ASPECTS = [
   { key: 'sosial',       label: 'Sosial & Kemandirian', icon: 'solar:users-group-rounded-outline', color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
 ];
 
-const FoodCard = ({ item }: { item: FoodItem }) => {
+const FoodCard = ({
+  item,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+}: {
+  item: FoodItem;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onEdit?: (item: FoodItem) => void;
+  onDelete?: (item: FoodItem) => void;
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -148,8 +183,132 @@ const FoodCard = ({ item }: { item: FoodItem }) => {
             </div>
           )}
         </div>
+        {(canEdit || canDelete) && (
+          <div className="flex flex-col gap-1.5">
+            {canEdit && (
+              <button
+                onClick={() => onEdit?.(item)}
+                className="w-8 h-8 rounded-lg border border-gray-200 dark:border-darkborder flex items-center justify-center text-gray-500 hover:text-[#0152EA] hover:border-[#0152EA]"
+              >
+                <Icon icon="solar:pen-outline" width={14} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => onDelete?.(item)}
+                className="w-8 h-8 rounded-lg border border-gray-200 dark:border-darkborder flex items-center justify-center text-gray-500 hover:text-red-600 hover:border-red-400"
+              >
+                <Icon icon="solar:trash-bin-trash-outline" width={14} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
+  );
+};
+
+interface FoodFormDialogProps {
+  open: boolean;
+  onClose: () => void;
+  food: FoodItem | null;
+  onSubmit: (data: CreateFoodRequest) => void;
+  isPending?: boolean;
+}
+
+const buildInitialFoodForm = (food: FoodItem | null): CreateFoodRequest => {
+  if (!food) {
+    return {
+      name: "",
+      category: "umum",
+      nutritional_info: "",
+      recipe: "",
+      image: null,
+    };
+  }
+
+  return {
+    name: food.name,
+    category: food.category,
+    nutritional_info: food.nutritional_info,
+    recipe: food.recipe ?? "",
+    image: null,
+  };
+};
+
+const FoodFormDialog = ({ open, onClose, food, onSubmit, isPending = false }: FoodFormDialogProps) => {
+  const [form, setForm] = useState<CreateFoodRequest>(buildInitialFoodForm(food));
+  const [selectedImageName, setSelectedImageName] = useState<string>("");
+
+  const submit = () => {
+    if (!form.name.trim() || !form.nutritional_info.trim()) return;
+    onSubmit({
+      ...form,
+      recipe: form.recipe?.trim() || null,
+      image: form.image ?? null,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{food ? "Edit Makanan" : "Tambah Makanan"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Nama Makanan</Label>
+            <Input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} placeholder="Contoh: Telur rebus" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Kategori</Label>
+            <select
+              className="w-full h-9 px-3 text-sm border border-gray-200 dark:border-darkborder rounded-lg bg-white dark:bg-darkgray"
+              value={form.category}
+              onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+            >
+              <option value="umum">Umum</option>
+              <option value="stunting">Stunting</option>
+              <option value="tinggi">Tinggi Badan</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Info Nutrisi</Label>
+            <Textarea value={form.nutritional_info} onChange={(e) => setForm((p) => ({ ...p, nutritional_info: e.target.value }))} placeholder="Kandungan gizi makanan..." className="min-h-[80px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Resep</Label>
+            <Textarea value={form.recipe ?? ""} onChange={(e) => setForm((p) => ({ ...p, recipe: e.target.value }))} placeholder="Cara penyajian/resep (opsional)" className="min-h-[80px]" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Gambar</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setForm((p) => ({ ...p, image: file }));
+                setSelectedImageName(file?.name ?? "");
+              }}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {selectedImageName
+                ? `File dipilih: ${selectedImageName}`
+                : food?.image
+                  ? "Kosongkan jika tidak ingin mengubah gambar lama"
+                  : "Format: JPG, PNG, WEBP (maks 2MB)"}
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>Batal</Button>
+          <Button onClick={submit} disabled={isPending || !form.name.trim() || !form.nutritional_info.trim()} className="bg-[#0152EA] hover:bg-blue-700 text-white">
+            {isPending && <Icon icon="solar:refresh-line-duotone" className="mr-2 animate-spin" width={14} />}
+            {food ? "Simpan" : "Tambah"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -205,14 +364,49 @@ const StimulationSection = () => {
 };
 
 const FoodRecommendationPage = () => {
+  const { hasPermission } = usePermission();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'makanan' | 'stimulasi'>('makanan');
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
+  const [deletingFood, setDeletingFood] = useState<FoodItem | null>(null);
+
+  const canCreateFood = hasPermission(PERMISSIONS.FOODS_CREATE);
+  const canUpdateFood = hasPermission(PERMISSIONS.FOODS_UPDATE);
+  const canDeleteFood = hasPermission(PERMISSIONS.FOODS_DELETE);
 
   const { data, isLoading } = useGetFoods(
     categoryFilter !== "all" ? { category: categoryFilter, search: search || undefined } : { search: search || undefined }
   );
   const foods = data?.data?.data ?? [];
+
+  const createFoodMutation = useCreateFood({
+    onSuccess: () => {
+      toast.success("Makanan berhasil ditambahkan");
+      setIsFormOpen(false);
+      setEditingFood(null);
+    },
+    onError: () => toast.error("Gagal menambahkan makanan"),
+  });
+
+  const updateFoodMutation = useUpdateFood({
+    onSuccess: () => {
+      toast.success("Makanan berhasil diperbarui");
+      setIsFormOpen(false);
+      setEditingFood(null);
+    },
+    onError: () => toast.error("Gagal memperbarui makanan"),
+  });
+
+  const deleteFoodMutation = useDeleteFood({
+    onSuccess: () => {
+      toast.success("Makanan berhasil dihapus");
+      setDeletingFood(null);
+    },
+    onError: () => toast.error("Gagal menghapus makanan"),
+  });
 
   const foodCategories = [
     { value: "all", label: "Semua", icon: "solar:list-outline" },
@@ -227,6 +421,21 @@ const FoodRecommendationPage = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Saran Makanan & Tindakan</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Rekomendasi makanan bergizi dan stimulasi tumbuh kembang anak</p>
       </div>
+
+      {canCreateFood && (
+        <div className="flex items-center justify-end">
+          <Button
+            className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2"
+            onClick={() => {
+              setEditingFood(null);
+              setIsFormOpen(true);
+            }}
+          >
+            <Icon icon="solar:add-circle-outline" width={16} />
+            Tambah Makanan
+          </Button>
+        </div>
+      )}
 
       {/* Tab switch */}
       <div className="flex gap-1 bg-gray-100 dark:bg-darkminisidebar rounded-xl p-1 w-fit">
@@ -320,7 +529,17 @@ const FoodRecommendationPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {foods.map((item) => (
-                <FoodCard key={item.id} item={item} />
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  canEdit={canUpdateFood}
+                  canDelete={canDeleteFood}
+                  onEdit={(food) => {
+                    setEditingFood(food);
+                    setIsFormOpen(true);
+                  }}
+                  onDelete={setDeletingFood}
+                />
               ))}
             </div>
           )}
@@ -341,6 +560,60 @@ const FoodRecommendationPage = () => {
           <StimulationSection />
         </>
       )}
+
+      <FoodFormDialog
+        key={`${editingFood ? `edit-${editingFood.id}` : 'create'}-${isFormOpen ? 'open' : 'closed'}`}
+        open={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setEditingFood(null);
+        }}
+        food={editingFood}
+        onSubmit={(payload) => {
+          if (editingFood) {
+            if (!canUpdateFood) {
+              toast.error("Tidak memiliki akses untuk mengubah makanan");
+              return;
+            }
+            updateFoodMutation.mutate({ id: editingFood.id, data: payload });
+            return;
+          }
+          if (!canCreateFood) {
+            toast.error("Tidak memiliki akses untuk menambah makanan");
+            return;
+          }
+          createFoodMutation.mutate(payload);
+        }}
+        isPending={createFoodMutation.isPending || updateFoodMutation.isPending}
+      />
+
+      <AlertDialog open={!!deletingFood} onOpenChange={() => setDeletingFood(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Makanan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Data makanan {deletingFood?.name ? `"${deletingFood.name}"` : "ini"} akan dihapus permanen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (!canDeleteFood) {
+                  toast.error("Tidak memiliki akses untuk menghapus makanan");
+                  return;
+                }
+                if (deletingFood) {
+                  deleteFoodMutation.mutate(deletingFood.id);
+                }
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

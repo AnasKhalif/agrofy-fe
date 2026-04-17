@@ -9,8 +9,14 @@ import TopProgressBar from "@/shared/components/common/TopProgressBar";
 import { useProgress } from "@/shared/hooks/useProgress";
 
 const FullLayout: FC = () => {
-  const { activeLayout, isLayout } = useContext(CustomizerContext);
+  const customizer = useContext(CustomizerContext);
   const isLoading = useProgress();
+
+  if (!customizer) {
+    return null;
+  }
+
+  const { activeLayout, isLayout } = customizer;
 
   return (
     <>

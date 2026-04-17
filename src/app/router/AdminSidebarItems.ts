@@ -1,4 +1,6 @@
 import type { MenuItem } from "./SidebarItems";
+import { ROUTES } from "@/app/constants/router";
+import { PERMISSIONS } from "@/app/constants/permission";
 
 const AdminSidebarContent: MenuItem[] = [
   {
@@ -11,7 +13,8 @@ const AdminSidebarContent: MenuItem[] = [
             name: "Dashboard",
             icon: "solar:home-2-outline",
             id: "admin-dashboard",
-            url: "/admin/dashboard",
+            url: ROUTES.PARENT.DASHBOARD,
+            permission: PERMISSIONS.DASHBOARD_READ,
           },
         ],
       },
@@ -22,7 +25,22 @@ const AdminSidebarContent: MenuItem[] = [
             name: "Manajemen Artikel",
             icon: "solar:document-text-outline",
             id: "admin-articles",
-            url: "/admin/articles",
+            url: ROUTES.ADMIN.ARTICLES,
+            permission: PERMISSIONS.ARTICLES_READ,
+          },
+          {
+            name: "Manajemen FAQ",
+            icon: "solar:question-circle-outline",
+            id: "admin-faqs",
+            url: ROUTES.ADMIN.FAQS,
+            permission: PERMISSIONS.FAQS_READ,
+          },
+          {
+            name: "Daftar Makanan",
+            icon: "solar:plate-outline",
+            id: "admin-foods",
+            url: ROUTES.ADMIN.FOODS,
+            permission: PERMISSIONS.FOODS_READ,
           },
         ],
       },
@@ -33,13 +51,15 @@ const AdminSidebarContent: MenuItem[] = [
             name: "Data Anak",
             icon: "solar:users-group-rounded-outline",
             id: "admin-children",
-            url: "/admin/children",
+            url: ROUTES.ADMIN.CHILDREN,
+            permission: PERMISSIONS.CHILDREN_READ,
           },
           {
             name: "Laporan Pertumbuhan",
             icon: "solar:chart-square-outline",
             id: "admin-reports",
-            url: "/admin/reports",
+            url: ROUTES.ADMIN.REPORTS,
+            permission: PERMISSIONS.REPORTS_READ,
           },
         ],
       },
@@ -50,7 +70,8 @@ const AdminSidebarContent: MenuItem[] = [
             name: "Manajemen Pengguna",
             icon: "solar:user-id-outline",
             id: "admin-users",
-            url: "/admin/users",
+            url: ROUTES.ADMIN.USERS,
+            permission: PERMISSIONS.USERS_READ,
           },
         ],
       },

@@ -10,16 +10,30 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useState, useMemo } from "react";
+import { useGetStuntingHistory } from "@/app/api/stunting/useStuntingApi";
+import { useGetConsultations } from "@/app/api/consultation/useConsultationApi";
 
 export default function OmzetTrendCard({
-  title = "Omzet Trend",
+  title = "Tren Aktivitas",
 }: {
   title?: string;
 }) {
   const theme = useTheme();
+  const { data: stuntingHistoryData } = useGetStuntingHistory();
+  const { data: consultationsData } = useGetConsultations();
+
   const now = new Date();
   const currentMonthValue = `${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}`;
   const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthValue);
+
+  const history = useMemo(
+    () => stuntingHistoryData?.data?.data ?? [],
+    [stuntingHistoryData],
+  );
+  const consultations = useMemo(
+    () => consultationsData?.data?.data ?? [],
+    [consultationsData],
+  );
 
   const monthNames = [
     "Januari",
@@ -36,27 +50,52 @@ export default function OmzetTrendCard({
     "Desember",
   ];
 
-  // Sample data - static values to avoid impure function error
-  const labels = useMemo(
-    () => Array.from({ length: 30 }, (_, i) => `${i + 1}`),
-    [],
-  );
-  const productSeries = useMemo(
-    () => [
-      5000, 7000, 6500, 8000, 9000, 7500, 10000, 9500, 11000, 10500, 12000,
-      11500, 13000, 12500, 14000, 13500, 15000, 14500, 13000, 12000, 11000,
-      10000, 9000, 8000, 7000, 8500, 9500, 10500, 11500, 12500,
-    ],
-    [],
-  );
-  const treatmentSeries = useMemo(
-    () => [
-      3000, 4000, 3500, 5000, 6000, 4500, 7000, 6500, 8000, 7500, 9000, 8500,
-      10000, 9500, 11000, 10500, 12000, 11500, 10000, 9000, 8000, 7000, 6000,
-      5000, 4000, 5500, 6500, 7500, 8500, 9500,
-    ],
-    [],
-  );
+  const { labels, detectionSeries, consultationSeries, maxValue } = useMemo(() => {
+    const [monthStr, yearStr] = selectedMonth.split("-");
+    const month = Number(monthStr);
+    const year = Number(yearStr);
+
+    if (!month || !year) {
+      return {
+        labels: Array.from({ length: 30 }, (_, i) => `${i + 1}`),
+        detectionSeries: Array.from({ length: 30 }, () => 0),
+        consultationSeries: Array.from({ length: 30 }, () => 0),
+        maxValue: 10,
+      };
+    }
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const localLabels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+    const localDetections = Array.from({ length: daysInMonth }, () => 0);
+    const localConsultations = Array.from({ length: daysInMonth }, () => 0);
+
+    history.forEach((item) => {
+      const date = new Date(item.measurement_date);
+      if (date.getFullYear() !== year || date.getMonth() + 1 !== month) return;
+      const dayIndex = date.getDate() - 1;
+      if (dayIndex >= 0 && dayIndex < daysInMonth) {
+        localDetections[dayIndex] += 1;
+      }
+    });
+
+    consultations.forEach((item) => {
+      const date = new Date(item.created_at);
+      if (date.getFullYear() !== year || date.getMonth() + 1 !== month) return;
+      const dayIndex = date.getDate() - 1;
+      if (dayIndex >= 0 && dayIndex < daysInMonth) {
+        localConsultations[dayIndex] += 1;
+      }
+    });
+
+    const seriesMax = Math.max(...localDetections, ...localConsultations, 1);
+
+    return {
+      labels: localLabels,
+      detectionSeries: localDetections,
+      consultationSeries: localConsultations,
+      maxValue: Math.ceil(seriesMax * 1.2),
+    };
+  }, [consultations, history, selectedMonth]);
 
   return (
     <Card
@@ -69,21 +108,13 @@ export default function OmzetTrendCard({
       }}
     >
       <CardContent>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={2}
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ color: theme.palette.text.secondary }}
-            >
-              Laporan harian pemasukan klinik
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+              Laporan harian deteksi & konsultasi
             </Typography>
             <Box display="flex" gap={2} alignItems="center" mt={1}>
               <Box display="flex" alignItems="center" gap={1}>
@@ -95,11 +126,8 @@ export default function OmzetTrendCard({
                     bgcolor: "#0A62FF",
                   }}
                 />
-                <Typography
-                  variant="body2"
-                  sx={{ color: theme.palette.text.secondary }}
-                >
-                  Produk
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                  Deteksi
                 </Typography>
               </Box>
               <Box display="flex" alignItems="center" gap={1}>
@@ -111,11 +139,8 @@ export default function OmzetTrendCard({
                     bgcolor: "#7ED1FF",
                   }}
                 />
-                <Typography
-                  variant="body2"
-                  sx={{ color: theme.palette.text.secondary }}
-                >
-                  Treatment
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                  Konsultasi
                 </Typography>
               </Box>
             </Box>
@@ -144,7 +169,7 @@ export default function OmzetTrendCard({
               size="small"
               sx={{ textTransform: "none", borderRadius: "8px" }}
             >
-              Laporan Penjualan
+              Laporan Aktivitas
             </Button>
           </Box>
         </Box>
@@ -164,21 +189,21 @@ export default function OmzetTrendCard({
               {
                 position: "left",
                 min: 0,
-                max: 20000,
+                max: maxValue,
                 tickLabelStyle: { fill: theme.palette.text.secondary },
                 disableLine: true,
               },
             ]}
             series={[
               {
-                data: treatmentSeries,
+                data: consultationSeries,
                 color: "#7ED1FF",
                 area: true,
                 showMark: false,
                 curve: "natural",
               },
               {
-                data: productSeries,
+                data: detectionSeries,
                 color: "#0A62FF",
                 area: false,
                 showMark: false,

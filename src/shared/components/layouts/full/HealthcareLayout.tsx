@@ -1,5 +1,5 @@
-import { FC, useState } from 'react';
-import { Outlet } from "react-router";
+import { FC, useEffect, useRef, useState } from 'react';
+import { Outlet, useLocation } from "react-router";
 import HealthcareSidebar from './healthcare/sidebar/HealthcareSidebar';
 import HealthcareTopbar from './healthcare/header/HealthcareTopbar';
 import ScrollToTop from '@/shared/components/theme-ui/ScrollToTop';
@@ -10,6 +10,7 @@ import StandbyOverlay from '@/shared/components/StandbyOverlay';
 import PinEntryScreen from '@/shared/components/PinEntryScreen';
 import TopProgressBar from '@/shared/components/common/TopProgressBar';
 import { useProgress } from '@/shared/hooks/useProgress';
+import { accessLogService } from '@/app/services/accessLogService';
 
 /**
  * HealthcareLayout - Clean layout matching Figma design
@@ -20,9 +21,32 @@ import { useProgress } from '@/shared/hooks/useProgress';
  */
 const HealthcareLayoutContent: FC = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { setStandby } = useStandby();
   const isLoading = useProgress();
+  const location = useLocation();
+  const lastTrackedPathRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const fullPath = `${location.pathname}${location.search}${location.hash}`;
+    if (lastTrackedPathRef.current === fullPath) return;
+
+    lastTrackedPathRef.current = fullPath;
+
+    const roleName = user?.role
+      ? (typeof user.role === "string" ? user.role : user.role.name)
+      : "unknown";
+
+    accessLogService.add({
+      userId: user?.id ?? null,
+      userName: user?.name ?? "Unknown User",
+      role: roleName,
+      path: fullPath,
+      method: "NAVIGATE",
+    });
+  }, [isAuthenticated, location.hash, location.pathname, location.search, user]);
 
   const handleMobileSidebarToggle = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);

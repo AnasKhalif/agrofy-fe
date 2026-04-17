@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetChildren, useDeleteChild } from "@/app/api/child/useChildApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
@@ -12,6 +12,7 @@ import {
 } from "@/shared/components/agrofy-ui/ui/dropdown-menu";
 import { useToast } from "@/shared/hooks";
 import type { ChildItem } from "@/app/api/child/type";
+import { useAuth } from "@/app/auth";
 
 const genderIcon = { 'laki-laki': 'solar:mars-outline', 'perempuan': 'solar:venus-outline' };
 const genderColor = { 'laki-laki': 'text-blue-600 bg-blue-50', 'perempuan': 'text-pink-600 bg-pink-50' };
@@ -20,7 +21,15 @@ const genderAvatar = { 'laki-laki': 'bg-blue-100 text-blue-600', 'perempuan': 'b
 const ChildrenPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
   const [deleteUuid, setDeleteUuid] = useState<string | null>(null);
+
+  const roleName = user?.role
+    ? typeof user.role === "string"
+      ? user.role
+      : user.role.name
+    : "";
+  const isAdmin = roleName === "admin";
 
   const { data, isLoading, refetch } = useGetChildren();
   const children: ChildItem[] = data?.data?.data ?? [];
@@ -37,10 +46,12 @@ const ChildrenPage = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Data Anak</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Kelola data anak yang terdaftar</p>
         </div>
-        <Button onClick={() => navigate("/children/create")} className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2 h-9 text-sm">
-          <Icon icon="solar:user-plus-rounded-outline" width={16} />
-          Tambah Anak
-        </Button>
+        {!isAdmin && (
+          <Button onClick={() => navigate("/children/create")} className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2 h-9 text-sm">
+            <Icon icon="solar:user-plus-rounded-outline" width={16} />
+            Tambah Anak
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -61,11 +72,15 @@ const ChildrenPage = () => {
         <div className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder py-20 text-center">
           <Icon icon="solar:user-rounded-outline" width={56} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
           <p className="text-gray-500 dark:text-gray-400 font-medium">Belum ada data anak</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">Tambahkan data anak untuk mulai memantau pertumbuhan</p>
-          <Button onClick={() => navigate("/children/create")} className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2">
-            <Icon icon="solar:user-plus-rounded-outline" width={16} />
-            Tambah Anak Pertama
-          </Button>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-4">
+            {isAdmin ? "Belum ada data anak yang terdaftar" : "Tambahkan data anak untuk mulai memantau pertumbuhan"}
+          </p>
+          {!isAdmin && (
+            <Button onClick={() => navigate("/children/create")} className="bg-[#0152EA] hover:bg-blue-700 text-white gap-2">
+              <Icon icon="solar:user-plus-rounded-outline" width={16} />
+              Tambah Anak Pertama
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -94,9 +109,11 @@ const ChildrenPage = () => {
                     <DropdownMenuItem onClick={() => navigate(`/children/${child.uuid}/edit`)}>
                       <Icon icon="solar:pen-outline" className="mr-2" width={14} /> Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/stunting-detection?child_id=${child.id}`)}>
-                      <Icon icon="solar:medical-kit-outline" className="mr-2" width={14} /> Deteksi Stunting
-                    </DropdownMenuItem>
+                    {!isAdmin && (
+                      <DropdownMenuItem onClick={() => navigate(`/stunting-detection?child_id=${child.id}`)}>
+                        <Icon icon="solar:medical-kit-outline" className="mr-2" width={14} /> Deteksi Stunting
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setDeleteUuid(child.uuid)}>
                       <Icon icon="solar:trash-bin-trash-outline" className="mr-2" width={14} /> Hapus
                     </DropdownMenuItem>
@@ -137,9 +154,11 @@ const ChildrenPage = () => {
                 <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => navigate(`/monitoring?child_id=${child.id}`)}>
                   <Icon icon="solar:chart-outline" className="mr-1" width={13} /> Monitoring
                 </Button>
-                <Button size="sm" className="flex-1 text-xs bg-[#0152EA] hover:bg-blue-700 text-white" onClick={() => navigate(`/stunting-detection?child_id=${child.id}`)}>
-                  <Icon icon="solar:medical-kit-outline" className="mr-1" width={13} /> Deteksi
-                </Button>
+                {!isAdmin && (
+                  <Button size="sm" className="flex-1 text-xs bg-[#0152EA] hover:bg-blue-700 text-white" onClick={() => navigate(`/stunting-detection?child_id=${child.id}`)}>
+                    <Icon icon="solar:medical-kit-outline" className="mr-1" width={13} /> Deteksi
+                  </Button>
+                )}
               </div>
             </div>
           ))}

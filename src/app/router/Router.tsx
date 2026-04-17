@@ -1,7 +1,9 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router";
 import { lazy } from "react";
 import { ROUTES } from "@/app/constants/router";
 import { useAuth } from "@/app/auth";
+import { usePermission } from "@/shared/hooks/usePermission";
+import { PERMISSIONS } from "@/app/constants/permission";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -10,18 +12,40 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const PermissionRoute = ({
+  children,
+  permissions,
+}: {
+  children: React.ReactNode;
+  permissions?: string[];
+}) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { hasAnyPermission } = usePermission();
+
+  if (isLoading) return null;
+  if (!isAuthenticated) return <Navigate to={ROUTES.AUTH.LOGIN} replace />;
+
+  if (permissions?.length && !hasAnyPermission(permissions)) {
+    return <Navigate to={ROUTES.ERROR.FORBIDDEN} replace />;
+  }
+
+  return <>{children}</>;
+};
+
 const LoginPage = lazy(() => import("@/features/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/features/auth/RegisterPage"));
 const RegisterStep2Page = lazy(() => import("@/features/auth/RegisterStep2Page"));
+const ForbiddenPage = lazy(() => import("@/features/error/ForbiddenPage"));
 const HealthcareLayout = lazy(() => import("@/shared/components/layouts/full/HealthcareLayout"));
 
 // Dashboard
 const BusinessPage = lazy(() => import("@/features/dashboard/business/BusinessPage"));
-const ParentDashboardPage = lazy(() => import("@/features/dashboard/ParentDashboardPage"));
-const DoctorDashboardPage = lazy(() => import("@/features/dashboard/DoctorDashboardPage"));
+const DashboardHomePage = lazy(() => import("@/features/dashboard/DashboardHomePage"));
+const DoctorPatientsPage = lazy(() => import("../../features/children/DoctorPatientsPage"));
 
 // Article
 const ArticlesPage = lazy(() => import("@/features/article/ArticlesPage"));
+const FaqManagementPage = lazy(() => import("@/features/faq/FaqManagementPage"));
 
 // Consultation
 const ConsultationPage = lazy(() => import("@/features/consultation/ConsultationPage"));
@@ -43,12 +67,14 @@ const ChildFormPage = lazy(() => import("@/features/children/ChildFormPage"));
 const StuntingDetectionPage = lazy(() => import("@/features/stunting/StuntingDetectionPage"));
 const DetectionHistoryPage = lazy(() => import("@/features/stunting/DetectionHistoryPage"));
 const MonitoringPage = lazy(() => import("@/features/stunting/MonitoringPage"));
+const GrowthReportPage = lazy(() => import("@/features/reports/GrowthReportPage"));
 
 // Profile
 const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
 
 // Food
 const FoodRecommendationPage = lazy(() => import("@/features/food/FoodRecommendationPage"));
+const SystemLogPage = lazy(() => import("@/features/logs/SystemLogPage"));
 
 const router = createBrowserRouter([
   {
@@ -68,38 +94,255 @@ const router = createBrowserRouter([
     element: <ProtectedRoute><HealthcareLayout /></ProtectedRoute>,
     children: [
       // Default (admin/superadmin)
-      { index: true, element: <BusinessPage /> },
-      { path: ROUTES.DASHBOARD_V1.DASHBOARD_BUSINESS_PERFORMANCE, element: <BusinessPage /> },
+      { index: true, element: <Navigate to={ROUTES.PARENT.DASHBOARD} replace /> },
+      {
+        path: ROUTES.DASHBOARD_V1.DASHBOARD_BUSINESS_PERFORMANCE,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.DASHBOARD_READ]}>
+            <BusinessPage />
+          </PermissionRoute>
+        ),
+      },
 
       // Parent routes
-      { path: "/dashboard", element: <ParentDashboardPage /> },
-      { path: "/children", element: <ChildrenPage /> },
-      { path: "/children/create", element: <ChildFormPage /> },
-      { path: "/children/:id/edit", element: <ChildFormPage /> },
-      { path: "/stunting-detection", element: <StuntingDetectionPage /> },
-      { path: "/detection-history", element: <DetectionHistoryPage /> },
-      { path: "/monitoring", element: <MonitoringPage /> },
-      { path: "/food-recommendations", element: <FoodRecommendationPage /> },
-      { path: ROUTES.PARENT.CONSULTATION, element: <ConsultationPage /> },
+      {
+        path: ROUTES.PARENT.DASHBOARD,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.DASHBOARD_READ]}>
+            <DashboardHomePage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.CHILDREN,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CHILDREN_READ]}>
+            <ChildrenPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/children/create",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CHILDREN_CREATE]}>
+            <ChildFormPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/children/:id/edit",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CHILDREN_UPDATE]}>
+            <ChildFormPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.DETECTION,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.STUNTING_CREATE]}>
+            <StuntingDetectionPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.DETECTION_HISTORY,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.STUNTING_READ]}>
+            <DetectionHistoryPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.MONITORING,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.MONITORING_READ]}>
+            <MonitoringPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.FOOD_RECOMMENDATIONS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.FOODS_READ]}>
+            <FoodRecommendationPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.CONSULTATION,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CONSULTATIONS_READ]}>
+            <ConsultationPage />
+          </PermissionRoute>
+        ),
+      },
 
       // Doctor routes
-      { path: "/doctor/dashboard", element: <DoctorDashboardPage /> },
-      { path: ROUTES.DOCTOR.CONSULTATION, element: <DoctorConsultationPage /> },
+      { path: ROUTES.DOCTOR.DASHBOARD, element: <Navigate to={ROUTES.PARENT.DASHBOARD} replace /> },
+      {
+        path: ROUTES.DOCTOR.CONSULTATION,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CONSULTATIONS_READ]}>
+            <DoctorConsultationPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.DOCTOR.PATIENTS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CHILDREN_READ]}>
+            <DoctorPatientsPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.DOCTOR.MONITORING,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.MONITORING_READ]}>
+            <MonitoringPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.DOCTOR.FOODS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.FOODS_READ]}>
+            <FoodRecommendationPage />
+          </PermissionRoute>
+        ),
+      },
 
       // Profile (all roles)
-      { path: "/profile", element: <ProfilePage /> },
+      {
+        path: ROUTES.PARENT.PROFILE,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.PROFILE_READ]}>
+            <ProfilePage />
+          </PermissionRoute>
+        ),
+      },
 
       // Admin routes
-      { path: ROUTES.ADMIN.ARTICLES, element: <ArticlesPage /> },
-      { path: ROUTES.ADMIN.USERS, element: <UserManagementPage /> },
+      { path: ROUTES.ADMIN.DASHBOARD, element: <Navigate to={ROUTES.PARENT.DASHBOARD} replace /> },
+      {
+        path: ROUTES.ADMIN.ARTICLES,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.ARTICLES_READ]}>
+            <ArticlesPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/admin/articles", element: <Navigate to={ROUTES.ADMIN.ARTICLES} replace /> },
+      {
+        path: ROUTES.ADMIN.FAQS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.FAQS_READ]}>
+            <FaqManagementPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/admin/faqs", element: <Navigate to={ROUTES.ADMIN.FAQS} replace /> },
+      {
+        path: ROUTES.ADMIN.FOODS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.FOODS_READ]}>
+            <FoodRecommendationPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/admin/foods", element: <Navigate to={ROUTES.ADMIN.FOODS} replace /> },
+      { path: "/admin/food", element: <Navigate to={ROUTES.ADMIN.FOODS} replace /> },
+      {
+        path: ROUTES.ADMIN.CHILDREN,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.CHILDREN_READ]}>
+            <ChildrenPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/admin/children", element: <Navigate to={ROUTES.ADMIN.CHILDREN} replace /> },
+      {
+        path: ROUTES.ADMIN.REPORTS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.REPORTS_READ]}>
+            <GrowthReportPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.ADMIN.USERS,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.USERS_READ]}>
+            <UserManagementPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/admin/users", element: <Navigate to={ROUTES.ADMIN.USERS} replace /> },
 
       // Super Admin routes
-      { path: "/roles", element: <RoleManagementPage /> },
-      { path: "/roles/create", element: <RoleEditPage /> },
-      { path: "/roles/edit/:id", element: <RoleEditPage /> },
-      { path: "/users", element: <UserManagementPage /> },
-      { path: "/users/create", element: <UserFormPage /> },
-      { path: "/users/edit/:id", element: <UserFormPage /> },
+      {
+        path: ROUTES.SUPER_ADMIN.LOG_SYSTEM,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.LOG_SYSTEM_READ]}>
+            <SystemLogPage />
+          </PermissionRoute>
+        ),
+      },
+      { path: "/super-admin/dashboard", element: <Navigate to={ROUTES.PARENT.DASHBOARD} replace /> },
+      { path: "/super-admin/log-system", element: <Navigate to={ROUTES.SUPER_ADMIN.LOG_SYSTEM} replace /> },
+      {
+        path: "/roles",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.ROLES_READ]}>
+            <RoleManagementPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/roles/create",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.ROLES_CREATE]}>
+            <RoleEditPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/roles/edit/:id",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.ROLES_UPDATE]}>
+            <RoleEditPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/users",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.USERS_READ]}>
+            <UserManagementPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/users/create",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.USERS_CREATE]}>
+            <UserFormPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: "/users/edit/:id",
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.USERS_UPDATE]}>
+            <UserFormPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.ERROR.FORBIDDEN,
+        element: <ForbiddenPage />,
+      },
     ],
   },
   {

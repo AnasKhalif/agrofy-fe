@@ -12,6 +12,7 @@ export interface CreateRoleRequest {
   display_name: string;
   description?: string;
   permissions?: string[];
+  exclusive_roles?: string[];
 }
 
 export type UpdateRoleRequest = Partial<CreateRoleRequest>;

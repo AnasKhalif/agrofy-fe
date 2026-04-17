@@ -21,9 +21,6 @@ export const articleApi = {
   uploadImage: (id: number, file: File) => {
     const formData = new FormData();
     formData.append("image", file);
-    return apiService.postForm<ResponseApi<Article>>(
-      `/api/v1/articles/${id}/image`,
-      formData,
-    );
+    return apiService.post<ResponseApi<Article>>(`/api/v1/articles/${id}/image`, formData);
   },
 };

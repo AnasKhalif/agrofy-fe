@@ -124,45 +124,11 @@ const StandbyOverlay: FC = () => {
             </div>
             {/* <div className="text-sm text-white mt-1">{dateString}</div> */}
           </div>
-
-          {/* Top Right - Weather Widget (Placeholder) */}
-          <div className="bg-white/90 backdrop-blur-md rounded-2xl px-6 py-4 shadow-2xl items-center gap-4 min-w-[312px] overflow-hidden max-h-[312px]">
-            <div className="text-center">
-              <div className="text-xl text-blue-700 font-semibold pt-2">Jadwalmu</div>
-            </div>
-            <div>
-              <svg viewBox="0 0 200 60" className="w-full mx-auto text-blue-500">
-                <path
-                  d="M0 40 C 40 10, 80 60, 120 30 S 200 50, 200 30"
-                  fill="transparent"
-                  stroke="currentColor"
-                  stroke-width="2"
-                />
-              </svg>
-              <div className="grid grid-cols-3 gap-2 py-3 -mt-4">
-                <div className="text-blue-700">
-                  <p className="text-3xl flex justify-center font-bold">04</p>
-                  <p className="text-xs flex justify-center">Pasien Hari ini</p>
-                </div>
-                <div className="text-blue-700">
-                  <p className="text-3xl flex justify-center font-bold">04</p>
-                  <p className="text-xs flex justify-center">Pasien Terdaftar</p>
-                </div>
-                <div className="text-blue-700">
-                  <p className="text-3xl flex justify-center font-bold">04</p>
-                  <p className="text-xs flex justify-center">Selesai Penanganan</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Center - Motivational Quote */}
         <div className="flex justify-start mb-12 pl-4">
           <div className="max-w-3xl px-6">
-            <p className="text-white text-base md:text-lg font-medium drop-shadow-lg mb-4">
-              Good Afternoon Sasha.
-            </p>
             <p className="text-white text-3xl md:text-3xl font-semibold drop-shadow-lg mb-1">
               Let your smile change the world.
             </p>

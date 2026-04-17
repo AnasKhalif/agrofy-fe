@@ -1,13 +1,12 @@
 import { FC, useEffect, useState, useMemo } from 'react';
-import { useLocation, NavLink } from 'react-router';
+import { useLocation, NavLink, useNavigate } from 'react-router';
 import { Icon } from "@iconify/react";
-import SidebarContent from "@/app/router/SidebarItems";
 import LogoIcon from "@/assets/images/logos/smartgrowth.png";
-import NexDashboardSidebarContent from "@/app/router/NexDashboardSidebarItems";
+import SuperAdminSidebarContent from "@/app/router/SuperAdminSidebarItems";
 import StuntingParentSidebarContent from "@/app/router/StuntingParentSidebarItems";
 import AdminSidebarContent from "@/app/router/AdminSidebarItems";
 import DoctorSidebarContent from "@/app/router/DoctorSidebarItems";
-import { usePermission, useToast } from "@/shared/hooks";
+import { useToast } from "@/shared/hooks";
 import { Button } from '@/shared/components/agrofy-ui/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +17,55 @@ import { useAuth } from '@/app/auth';
 import { useChangeBranch } from '@/app/api/auth/useAuthApi';
 import { authService } from '@/app/services/authService';
 import { useIsNexCompany } from '@/app/hooks/useIsNexCompany';
+import { ROUTES } from '@/app/constants/router';
+import { useGetParentDashboard } from '@/app/api/dashboard/useDashboardApi';
+import type { MenuItem, ChildItem } from '@/app/router/SidebarItems';
+
+const mergeSidebarContents = (contents: MenuItem[][]): MenuItem[] => {
+  const headingMap = new Map<string, ChildItem[]>();
+  const seenKeys = new Set<string>();
+  const seenUrls = new Set<string>();
+
+  contents.forEach((content) => {
+    content.forEach((section) => {
+      section.items?.forEach((item) => {
+        const heading = item.heading;
+        if (!heading || !item.children) return;
+
+        const existing = headingMap.get(heading) ?? [];
+
+        item.children.forEach((child) => {
+          const normalizedUrl =
+            typeof child.url === 'string' ? child.url.trim().toLowerCase() : '';
+
+          if (normalizedUrl && seenUrls.has(normalizedUrl)) return;
+
+          const uniqueKey = `${child.id ?? child.url ?? child.name}-${child.url ?? ''}`;
+          if (seenKeys.has(uniqueKey)) return;
+
+          if (normalizedUrl) {
+            seenUrls.add(normalizedUrl);
+          }
+
+          seenKeys.add(uniqueKey);
+          existing.push(child);
+        });
+
+        headingMap.set(heading, existing);
+      });
+    });
+  });
+
+  return [
+    {
+      id: 1,
+      items: Array.from(headingMap.entries()).map(([heading, children]) => ({
+        heading,
+        children,
+      })),
+    },
+  ];
+};
 
 interface HealthcareSidebarProps {
   isMobileOpen?: boolean;
@@ -41,9 +89,9 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
   onStandByMode,
 }) => {
   const { user } = useAuth()
-  const { hasPermission } = usePermission();
   const toast = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const pathname = location.pathname;
   const isNexCompany = useIsNexCompany();
 
@@ -119,41 +167,156 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
       : user.role.name
     : null;
 
-  const isSuperAdmin = userRoleName === "superadmin";
-  const isAdmin = userRoleName === "admin";
-  const isDoctor = userRoleName === "dokter" || userRoleName === "health_worker";
-  const isParent = userRoleName === "orang_tua" || userRoleName === "parent";
+  const normalizeRoleName = (roleName: string) =>
+    roleName.toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+  const normalizedUserRoleName = userRoleName ? normalizeRoleName(userRoleName) : null;
+  const normalizedAssignedRoles = useMemo(() => {
+    const payloadRoles = Array.isArray(user?.roles) ? user.roles : [];
+    const fallbackRoles = userRoleName ? [userRoleName] : [];
+
+    return Array.from(
+      new Set([...payloadRoles, ...fallbackRoles].map((roleName) => normalizeRoleName(roleName)))
+    );
+  }, [user?.roles, userRoleName]);
+
+  const isSuperAdmin = normalizedUserRoleName === "superadmin";
+  const isAdmin = normalizedUserRoleName === "admin";
+  const isDoctor = normalizedUserRoleName === "dokter" || normalizedUserRoleName === "healthworker";
+  const isParent = normalizedUserRoleName === "orangtua" || normalizedUserRoleName === "parent" || normalizedUserRoleName === "user";
+  const hasAdminAssignedRole = normalizedAssignedRoles.includes("admin");
+  const hasDoctorAssignedRole =
+    normalizedAssignedRoles.includes("dokter") || normalizedAssignedRoles.includes("healthworker");
+  const hasParentAssignedRole =
+    normalizedAssignedRoles.includes("user")
+    || normalizedAssignedRoles.includes("orangtua")
+    || normalizedAssignedRoles.includes("parent");
+  const hideClinicSelectorForDoctor = isDoctor && allClinicOptions.length === 0;
+  const hideClinicSelectorForAdmin = isAdmin && allClinicOptions.length === 0;
+  const hideClinicSelectorForSuperAdmin = isSuperAdmin;
+  const hideClinicSelector = hideClinicSelectorForDoctor || hideClinicSelectorForAdmin || hideClinicSelectorForSuperAdmin;
+
+  const showParentReminder = isParent && allClinicOptions.length === 0;
+
+  const { data: parentDashboardData } = useGetParentDashboard({
+    enabled: showParentReminder,
+  });
+
+  const parentDashboard = parentDashboardData?.data?.data;
+
+  const latestMeasurementDate = useMemo(() => {
+    const latestDates = (parentDashboard?.children_summary ?? [])
+      .map((child) => child.latest_date)
+      .filter((value): value is string => !!value)
+      .map((value) => new Date(value))
+      .filter((date) => !Number.isNaN(date.getTime()));
+
+    if (latestDates.length === 0) {
+      return null;
+    }
+
+    return latestDates.sort((a, b) => b.getTime() - a.getTime())[0];
+  }, [parentDashboard]);
+
+  const nextMeasurementDate = useMemo(() => {
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + 7);
+    return nextDate;
+  }, []);
+
+  const nextMeasurementDateLabel = useMemo(() => {
+    return nextMeasurementDate.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  }, [nextMeasurementDate]);
+
+  const isMeasurementDue = useMemo(() => {
+    if (!latestMeasurementDate) {
+      return true;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDate = new Date(latestMeasurementDate);
+    dueDate.setDate(dueDate.getDate() + 7);
+    dueDate.setHours(0, 0, 0, 0);
+
+    return today.getTime() >= dueDate.getTime();
+  }, [latestMeasurementDate]);
 
   // Determine which sidebar content to use based on role
-  const currentSidebarContent = isSuperAdmin
-    ? (selectedClinic.id === 'nex' ? NexDashboardSidebarContent : SidebarContent)
-    : isAdmin
-      ? AdminSidebarContent
-      : isDoctor
-        ? DoctorSidebarContent
-        : StuntingParentSidebarContent; // default: orang_tua / fallback
+  const superAdminCombinedSidebarContent = useMemo(() => {
+    const sources: MenuItem[][] = [SuperAdminSidebarContent];
 
-  // Filter menu items by permissions
+    if (hasAdminAssignedRole) {
+      sources.push(AdminSidebarContent);
+    }
+
+    if (hasDoctorAssignedRole) {
+      sources.push(DoctorSidebarContent);
+    }
+
+    if (hasParentAssignedRole) {
+      sources.push(StuntingParentSidebarContent);
+    }
+
+    return mergeSidebarContents(sources);
+  }, [hasAdminAssignedRole, hasDoctorAssignedRole, hasParentAssignedRole]);
+
+  const roleBasedSidebarContent = useMemo(() => {
+    const sources: MenuItem[][] = [];
+
+    if (isAdmin || hasAdminAssignedRole) {
+      sources.push(AdminSidebarContent);
+    }
+
+    if (isDoctor || hasDoctorAssignedRole) {
+      sources.push(DoctorSidebarContent);
+    }
+
+    if (isParent || hasParentAssignedRole) {
+      sources.push(StuntingParentSidebarContent);
+    }
+
+    // Fallback supaya user tetap punya navigasi minimal saat role tidak terdeteksi
+    if (sources.length === 0) {
+      sources.push(StuntingParentSidebarContent);
+    }
+
+    return mergeSidebarContents(sources);
+  }, [
+    isAdmin,
+    isDoctor,
+    isParent,
+    hasAdminAssignedRole,
+    hasDoctorAssignedRole,
+    hasParentAssignedRole,
+  ]);
+
+  const currentSidebarContent = isSuperAdmin
+    ? superAdminCombinedSidebarContent
+    : roleBasedSidebarContent;
+
+  // Keep menu visible based on role/sidebar config.
+  // Access control is enforced by route-level PermissionRoute (403 page).
   const filteredSidebarContent = useMemo(() => {
     return currentSidebarContent.map((section) => ({
       ...section,
       items: section.items?.map((item) => ({
         ...item,
-        children: item.children?.filter((child) => {
-          // If no permission is specified, show the item
-          if (!child.permission) return true;
-          // Otherwise, check if user has the permission
-          return hasPermission(child.permission);
-        }),
+        children: item.children ?? [],
       })).filter((item) => {
-        // Filter out items that have no children left after permission filtering
+        // Keep only menu groups with children
         return item.children && item.children.length > 0;
       }),
     })).filter((section) => {
-      // Filter out sections that have no items left after permission filtering
+      // Keep only sections with items
       return section.items && section.items.length > 0;
     });
-  }, [hasPermission, currentSidebarContent]);
+  }, [currentSidebarContent]);
 
   // Auto-expand section containing current active route
   useEffect(() => {
@@ -163,9 +326,12 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
         if (hasActiveChild && item.heading) {
           const heading = item.heading;
           setExpandedSections((prev) => {
+            if (prev.has(heading)) {
+              return prev;
+            }
+
             const newSet = new Set(prev);
-            // heading is checked above, assert non-null to satisfy TypeScript narrowing inside the callback
-            newSet.add(heading!);
+            newSet.add(heading);
             return newSet;
           });
         }
@@ -253,91 +419,122 @@ const HealthcareSidebar: FC<HealthcareSidebarProps> = ({
       </div>
 
       {/* Clinic Selector */}
+      {!hideClinicSelector && (
       <div className="p-4 border-gray-200 dark:border-darkborder border-b-0 pt-6 pb-1">
-        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-          <DropdownMenuTrigger asChild id='select-branch-button'>
-            <button
-              className="w-full border border-gray-200 dark:border-darkborder rounded-md p-3 bg-white dark:bg-darkminisidebar py-2.5 hover:bg-gray-50 dark:hover:bg-dark transition-colors"
-              disabled={changeBranchMutation.isPending}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg flex items-center justify-center h-0 w-7">
-                    <div className="w-6 h-6 rounded-lg bg-[#0152EA] flex items-center justify-center">
-                      {changeBranchMutation.isPending ? (
-                        <Icon icon="solar:refresh-line-duotone" className="text-white animate-spin" width={14} />
-                      ) : (
-                        <Icon icon="solar:health-line-duotone" className="text-white" width={14} />
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedClinic.name}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{selectedClinic.subtitle}</span>
-                  </div>
+        {showParentReminder ? (
+          <div className="w-full border border-gray-200 dark:border-darkborder rounded-md p-3 bg-white dark:bg-darkminisidebar py-2.5">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg flex items-center justify-center h-0 w-7 mt-2">
+                <div className="w-6 h-6 rounded-lg bg-[#0152EA] flex items-center justify-center">
+                  <Icon icon="solar:health-line-duotone" className="text-white" width={14} />
                 </div>
-                {changeBranchMutation.isPending ? (
-                  <Icon
-                    icon="solar:refresh-line-duotone"
-                    className="w-4 h-4 text-gray-500 animate-spin"
-                  />
-                ) : (
-                  <Icon
-                    icon="solar:alt-arrow-down-line-duotone"
-                    className="w-4 h-4 text-gray-500 transition-transform"
-                  />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm font-medium text-gray-900 dark:text-white block">
+                  Reminder terdekat
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">
+                  Jadwal ukur tinggi/berat: {nextMeasurementDateLabel}
+                </span>
+                {isMeasurementDue && (
+                  <Button
+                    size="sm"
+                    className="mt-2 h-7 px-2.5 text-xs bg-[#0152EA] hover:bg-blue-700 text-white"
+                    onClick={() => navigate(ROUTES.PARENT.MONITORING)}
+                  >
+                    Isi sekarang
+                  </Button>
                 )}
               </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-[223px] p-2 bg-white dark:bg-darkgray border border-gray-200 dark:border-darkborder"
-            sideOffset={8}
-          >
-            {allClinicOptions.map((clinic) => (
+            </div>
+          </div>
+        ) : (
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild id='select-branch-button'>
               <button
-                key={clinic.id}
-                onClick={() => handleClinicSelect(clinic)}
-                id={`select-branch-${clinic.id}-button`}
-                className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-left ${
-                  selectedClinic.id === clinic.id
-                    ? 'bg-[#EFF3FF] dark:bg-blue-900/20'
-                    : 'hover:bg-gray-50 dark:hover:bg-darkminisidebar'
-                }`}
+                className="w-full border border-gray-200 dark:border-darkborder rounded-md p-3 bg-white dark:bg-darkminisidebar py-2.5 hover:bg-gray-50 dark:hover:bg-dark transition-colors"
+                disabled={changeBranchMutation.isPending}
               >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-white dark:bg-darkminisidebar">
-                  {clinic.id === 'nex' ? (
-                    <div className="w-12 h-12 rounded-full bg-[#0152EA] flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">nex.</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg flex items-center justify-center h-0 w-7">
+                      <div className="w-6 h-6 rounded-lg bg-[#0152EA] flex items-center justify-center">
+                        {changeBranchMutation.isPending ? (
+                          <Icon icon="solar:refresh-line-duotone" className="text-white animate-spin" width={14} />
+                        ) : (
+                          <Icon icon="solar:health-line-duotone" className="text-white" width={14} />
+                        )}
+                      </div>
                     </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{selectedClinic.name}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{selectedClinic.subtitle}</span>
+                    </div>
+                  </div>
+                  {changeBranchMutation.isPending ? (
+                    <Icon
+                      icon="solar:refresh-line-duotone"
+                      className="w-4 h-4 text-gray-500 animate-spin"
+                    />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-[#0152EA] flex items-center justify-center">
-                      <Icon icon="solar:health-line-duotone" className="text-white" width={24} />
-                    </div>
+                    <Icon
+                      icon="solar:alt-arrow-down-line-duotone"
+                      className="w-4 h-4 text-gray-500 transition-transform"
+                    />
                   )}
                 </div>
-                <div className="flex flex-col flex-1">
-                  <span className="font-medium text-gray-900 dark:text-white text-xs">{clinic.name}</span>
-                  <span className="text-xs text-slate-400 dark:text-gray-400">{clinic.subtitle}</span>
-                </div>
               </button>
-            ))}
-            {allClinicOptions.length === 0 && (<button
-                key={selectedClinic.id}
-                id={`select-branch-${selectedClinic.id}-button`}
-                className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-left ${
-                    'bg-[#EFF3FF] dark:bg-blue-900/20'
-                }`}
-              >
-                <div className="flex flex-col flex-1">
-                  <span className="font-medium text-gray-900 dark:text-white text-xs">{selectedClinic.name}</span>
-                  <span className="text-xs text-slate-400 dark:text-gray-400">{selectedClinic.subtitle}</span>
-                </div>
-              </button>)}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-[223px] p-2 bg-white dark:bg-darkgray border border-gray-200 dark:border-darkborder"
+              sideOffset={8}
+            >
+              {allClinicOptions.map((clinic) => (
+                <button
+                  key={clinic.id}
+                  onClick={() => handleClinicSelect(clinic)}
+                  id={`select-branch-${clinic.id}-button`}
+                  className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-left ${
+                    selectedClinic.id === clinic.id
+                      ? 'bg-[#EFF3FF] dark:bg-blue-900/20'
+                      : 'hover:bg-gray-50 dark:hover:bg-darkminisidebar'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-white dark:bg-darkminisidebar">
+                    {clinic.id === 'nex' ? (
+                      <div className="w-12 h-12 rounded-full bg-[#0152EA] flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">nex.</span>
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#0152EA] flex items-center justify-center">
+                        <Icon icon="solar:health-line-duotone" className="text-white" width={24} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col flex-1">
+                    <span className="font-medium text-gray-900 dark:text-white text-xs">{clinic.name}</span>
+                    <span className="text-xs text-slate-400 dark:text-gray-400">{clinic.subtitle}</span>
+                  </div>
+                </button>
+              ))}
+              {allClinicOptions.length === 0 && (<button
+                  key={selectedClinic.id}
+                  id={`select-branch-${selectedClinic.id}-button`}
+                  className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-left ${
+                      'bg-[#EFF3FF] dark:bg-blue-900/20'
+                  }`}
+                >
+                  <div className="flex flex-col flex-1">
+                    <span className="font-medium text-gray-900 dark:text-white text-xs">{selectedClinic.name}</span>
+                    <span className="text-xs text-slate-400 dark:text-gray-400">{selectedClinic.subtitle}</span>
+                  </div>
+                </button>)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
+      )}
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto pb-4 pt-2">

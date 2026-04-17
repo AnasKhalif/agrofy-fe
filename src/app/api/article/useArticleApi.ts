@@ -78,3 +78,17 @@ export const useDeleteArticle = (
     },
   });
 };
+
+export const useUploadArticleImage = (
+  options?: UseMutationOptions<AxiosResponse<ResponseApi<Article>>, AxiosError, { id: number; file: File }>,
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    ...options,
+    mutationFn: ({ id, file }) => articleApi.uploadImage(id, file),
+    onSuccess: (...args) => {
+      queryClient.invalidateQueries({ queryKey: articleKeys.all });
+      options?.onSuccess?.(...args);
+    },
+  });
+};

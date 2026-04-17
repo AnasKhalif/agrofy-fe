@@ -61,11 +61,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw error;
     }
 
-    const { token } = response.data.data;
+    const { token, user: loginUser } = response.data.data;
 
     // Store auth data
     authService.setToken(token);
+    if (loginUser) {
+      setUser(loginUser);
+      authService.setUser(loginUser);
+    }
     await refetchProfile();
+
+    return loginUser ?? null;
   };
 
   /**

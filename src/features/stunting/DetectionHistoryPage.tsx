@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetChildren } from "@/app/api/child/useChildApi";
 import { useGetStuntingHistory } from "@/app/api/stunting/useStuntingApi";

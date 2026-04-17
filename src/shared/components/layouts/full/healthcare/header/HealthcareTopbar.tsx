@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router";
 import {
@@ -13,6 +13,7 @@ import {
   AvatarFallback,
 } from "@/shared/components/agrofy-ui/ui/avatar";
 import { useAuth } from "@/app/auth";
+import { ROUTES } from "@/app/constants/router";
 
 interface HealthcareTopbarProps {
   onMobileMenuClick?: () => void;
@@ -29,12 +30,67 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
+  const roleName = user?.role
+    ? (typeof user.role === "string" ? user.role : user.role.name).toLowerCase()
+    : "";
+  const normalizedRoleName = roleName.replace(/[^a-z0-9]+/g, "");
+  const isDoctorRole = normalizedRoleName === "dokter" || normalizedRoleName === "healthworker";
+  const isAdminRole = normalizedRoleName === "admin" || normalizedRoleName === "superadmin";
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+
+  const generalNotifications = [
+    {
+      id: "notif-1",
+      icon: "solar:calendar-mark-outline",
+      title: "Reminder Monitoring",
+      description: "Pastikan data pertumbuhan minggu ini sudah terisi.",
+      onClick: () => navigate(ROUTES.PARENT.MONITORING),
+    },
+    {
+      id: "notif-2",
+      icon: "solar:chart-square-outline",
+      title: "Dashboard Diperbarui",
+      description: "Ringkasan status pertumbuhan sudah diperbarui.",
+      onClick: () => navigate(ROUTES.PARENT.DASHBOARD),
+    },
+    ...(isDoctorRole
+      ? [
+          {
+            id: "notif-doctor",
+            icon: "solar:users-group-rounded-outline",
+            title: "Tinjau Daftar Pasien",
+            description: "Ada data pasien yang bisa ditinjau hari ini.",
+            onClick: () => navigate(ROUTES.DOCTOR.PATIENTS),
+          },
+        ]
+      : []),
+    ...(isAdminRole
+      ? [
+          {
+            id: "notif-admin",
+            icon: "solar:document-text-outline",
+            title: "Periksa Laporan Pertumbuhan",
+            description: "Laporan bulanan siap ditinjau.",
+            onClick: () => navigate(ROUTES.ADMIN.REPORTS),
+          },
+        ]
+      : []),
+  ];
+
+  const visibleNotifications = useMemo(
+    () => generalNotifications.filter((item) => !readNotificationIds.includes(item.id)),
+    [generalNotifications, readNotificationIds],
+  );
+
+  const unreadTotal = visibleNotifications.length;
+
+  const handleNotificationClick = (id: string, onClick: () => void) => {
+    setReadNotificationIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    onClick();
+  };
+
   const isSuperAdmin =
-    user?.role
-      ? typeof user.role === "string"
-        ? user.role === "superadmin"
-        : user.role.name === "superadmin"
-      : false;
+    normalizedRoleName === "superadmin";
 
   const displayName = user?.name?.trim() || "Admin User";
   const roleLabel =
@@ -119,7 +175,7 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="h-9 w-9 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-darkminisidebar rounded-lg transition-colors"
+              className="relative h-9 w-9 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-darkminisidebar rounded-lg transition-colors"
               aria-label="Notifications"
               id="notification-button"
             >
@@ -128,6 +184,11 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
                 width={20}
                 className="text-gray-600 dark:text-gray-400"
               />
+              {unreadTotal > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none flex items-center justify-center">
+                  {unreadTotal > 99 ? "99+" : unreadTotal}
+                </span>
+              )}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
@@ -136,74 +197,54 @@ const HealthcareTopbar: FC<HealthcareTopbarProps> = ({ onMobileMenuClick }) => {
                 Notifications
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                You have 3 unread messages
+                {unreadTotal > 0
+                  ? `Ada ${unreadTotal} notifikasi umum`
+                  : "Belum ada notifikasi"}
               </p>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              <DropdownMenuItem>
-                <div className="flex gap-3 py-1">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                    <Icon
-                      icon="solar:calendar-outline"
-                      className="text-blue-600 dark:text-blue-400"
-                      width={16}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      New appointment
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Patient scheduled for tomorrow
-                    </p>
-                  </div>
+              {visibleNotifications.length === 0 ? (
+                <div className="px-4 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
+                  Tidak ada notifikasi.
                 </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex gap-3 py-1">
-                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                    <Icon
-                      icon="solar:check-circle-outline"
-                      className="text-green-600 dark:text-green-400"
-                      width={16}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      Payment received
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Rp 500.000 from patient #123
-                    </p>
-                  </div>
-                </div>
-              </DropdownMenuItem>
+              ) : (
+                visibleNotifications.slice(0, 5).map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification.id, notification.onClick)}
+                  >
+                    <div className="flex gap-3 py-1 w-full">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                        <Icon
+                          icon={notification.icon}
+                          className="text-blue-600 dark:text-blue-400"
+                          width={16}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {notification.description}
+                        </p>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
             </div>
             <div className="px-4 py-3 border-t border-gray-100 dark:border-darkborder">
               <button
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 id="view-all-notification"
-                onClick={() => navigate("/errors/not_found")}
+                onClick={() => navigate(ROUTES.PARENT.DASHBOARD)}
               >
-                View all notifications
+                Lihat dashboard
               </button>
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Settings */}
-        <button
-          className="h-9 w-9 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-darkminisidebar rounded-lg transition-colors"
-          aria-label="Settings"
-          id="setting-button"
-          onClick={() => navigate("/settings")}
-        >
-          <Icon
-            icon="solar:settings-outline"
-            width={20}
-            className="text-gray-600 dark:text-gray-400"
-          />
-        </button>
 
         {/* Profile Section */}
         <DropdownMenu>

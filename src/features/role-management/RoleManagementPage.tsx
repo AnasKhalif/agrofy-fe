@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetRoles, useDeleteRole } from "@/app/api/role/useRoleApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
@@ -27,14 +27,8 @@ const ROLE_COLORS: Record<string, { badge: string; icon: string }> = {
   superadmin: { badge: "text-purple-600 bg-purple-50 border border-purple-200", icon: "text-purple-600 bg-purple-50" },
   admin:      { badge: "text-blue-600 bg-blue-50 border border-blue-200",       icon: "text-blue-600 bg-blue-50"   },
   dokter:     { badge: "text-green-600 bg-green-50 border border-green-200",    icon: "text-green-600 bg-green-50" },
+  user:       { badge: "text-orange-600 bg-orange-50 border border-orange-200", icon: "text-orange-600 bg-orange-50" },
   orang_tua:  { badge: "text-orange-600 bg-orange-50 border border-orange-200", icon: "text-orange-600 bg-orange-50" },
-};
-
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  superadmin: ["Semua akses", "Manajemen pengguna", "Manajemen role", "Konfigurasi sistem"],
-  admin:      ["Dashboard admin", "Manajemen artikel", "Manajemen data anak", "Laporan pertumbuhan"],
-  dokter:     ["Dashboard dokter", "Konsultasi pasien", "Pantau perkembangan gizi"],
-  orang_tua:  ["Dashboard orang tua", "Data anak", "Deteksi stunting", "Monitoring", "Konsultasi"],
 };
 
 const ITEMS_PER_PAGE = 10;
@@ -127,7 +121,7 @@ const RoleManagementPage = () => {
               ) : (
                 paged.map((role) => {
                   const colors = ROLE_COLORS[role.name];
-                  const perms = role.permissions ?? ROLE_PERMISSIONS[role.name] ?? [];
+                  const perms = role.permissions ?? [];
 
                   return (
                     <tr key={role.id} className="hover:bg-gray-50 dark:hover:bg-darkminisidebar">

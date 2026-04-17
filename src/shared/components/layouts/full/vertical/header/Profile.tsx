@@ -10,6 +10,11 @@ import profileImg from "@/assets/images/profile/user-1.jpg";
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const roleLabel = user?.role
+    ? typeof user.role === "string"
+      ? user.role
+      : user.role.display_name || user.role.name
+    : "Administrator";
 
   const handleSignOut = () => {
     logout();
@@ -55,7 +60,7 @@ const Profile = () => {
                 {user?.name || "Admin User"}
               </h5>
               <p className="text-xs text-primary bg-lightprimary px-2 py-0.5 rounded mb-1">
-                {user?.role || "Administrator"}
+                {roleLabel}
               </p>
               <p className="text-sm text-ld opacity-80">
                 {user?.email || "admin@agrofy.id"}

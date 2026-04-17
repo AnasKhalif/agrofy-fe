@@ -3,6 +3,16 @@ import { Icon } from "@iconify/react";
 import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useBoolean } from '@/shared/hooks';
+import type { TopbarChildItem } from '@/app/router/TopbarItems';
+
+interface ChildComponentProps {
+  item: TopbarChildItem;
+  isActive?: boolean;
+  handleMouseEnter?: () => void;
+  handleMouseLeave?: () => void;
+  onClick?: () => void;
+  title?: string;
+}
 
 const ChildComponent = ({
   item,
@@ -11,7 +21,7 @@ const ChildComponent = ({
   handleMouseLeave,
   onClick,
   title
-}: any) => {
+}: ChildComponentProps) => {
   const submenu = useBoolean();
 
   const location = useLocation();
@@ -53,7 +63,7 @@ const ChildComponent = ({
       {submenu.value && item.children && (
         <div className={`absolute   top-0 mt-0 w-56 bg-white dark:bg-dark rounded-md shadow-lg ${title=="Tables"?"tables-position":"left-full rtl:right-full"}`}>
           <ul className="p-3 flex flex-col gap-2">
-            {item.children.map((child: any) => (
+            {item.children.map((child) => (
               <li key={child.id}>
                 {child.children ? (
                   <ChildComponent

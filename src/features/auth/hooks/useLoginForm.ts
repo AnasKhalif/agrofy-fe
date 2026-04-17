@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/app/auth";
+import { ROUTES } from "@/app/constants/router";
 import { useBoolean } from "@/shared/hooks";
 import { useStandby } from "@/app/contexts/StandbyContext";
 
@@ -31,10 +32,25 @@ export const useLoginForm = () => {
     loading.setTrue();
 
     try {
-      await login(data.email, data.password);
-      // Login successful, redirect to dashboard
+      const loggedInUser = await login(data.email, data.password);
+      const roleName = loggedInUser?.role
+        ? (typeof loggedInUser.role === "string"
+            ? loggedInUser.role
+            : loggedInUser.role.name
+          ).toLowerCase()
+        : "";
+
+      const redirectPath =
+        roleName === "dokter" || roleName === "health_worker" || roleName === "doctor"
+          ? ROUTES.PARENT.DASHBOARD
+          : roleName === "admin"
+            ? ROUTES.PARENT.DASHBOARD
+            : roleName === "superadmin"
+              ? ROUTES.PARENT.DASHBOARD
+              : ROUTES.PARENT.DASHBOARD;
+
       setStandby(false);
-      navigate("/");
+      navigate(redirectPath, { replace: true });
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { message?: string } } })?.response

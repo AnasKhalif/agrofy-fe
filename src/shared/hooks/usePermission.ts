@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAuth } from '@/app/auth';
 
 /**
@@ -8,15 +8,22 @@ import { useAuth } from '@/app/auth';
 export const usePermission = () => {
   const { user } = useAuth();
 
+  const userPermissions = useMemo(() => {
+    if (!user?.role || typeof user.role === 'string') return [] as string[];
+    return (user.role.permissions ?? []).map((permission) => permission.toLowerCase());
+  }, [user?.role]);
+
+  const hasWildcardPermission = userPermissions.includes('*');
+
   /**
    * Check if user has a specific permission
    */
   const hasPermission = useCallback(
     (permission: string): boolean => {
-      if (!user || !user.role || !user.role.permissions) return false;
-      return user.role.permissions.includes(permission);
+      if (hasWildcardPermission) return true;
+      return userPermissions.includes(permission.toLowerCase());
     },
-    [user]
+    [hasWildcardPermission, userPermissions]
   );
 
   /**
@@ -24,13 +31,13 @@ export const usePermission = () => {
    */
   const hasAllPermissions = useCallback(
     (permissions: string[]): boolean => {
-      if (!user || !user.role || !user.role.permissions) return false;
-      const userPermissions = user.role.permissions;
+      if (hasWildcardPermission) return true;
+      if (!permissions.length) return true;
       return permissions.every((permission) =>
-        userPermissions.includes(permission)
+        userPermissions.includes(permission.toLowerCase())
       );
     },
-    [user]
+    [hasWildcardPermission, userPermissions]
   );
 
   /**
@@ -38,13 +45,13 @@ export const usePermission = () => {
    */
   const hasAnyPermission = useCallback(
     (permissions: string[]): boolean => {
-      if (!user || !user.role || !user.role.permissions) return false;
-      const userPermissions = user.role.permissions;
+      if (hasWildcardPermission) return true;
+      if (!permissions.length) return true;
       return permissions.some((permission) =>
-        userPermissions.includes(permission)
+        userPermissions.includes(permission.toLowerCase())
       );
     },
-    [user]
+    [hasWildcardPermission, userPermissions]
   );
 
   return {

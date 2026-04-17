@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useNavigate, useParams } from "react-router";
+import { useForm, useWatch } from "react-hook-form";
+import { AxiosError } from "axios";
 import { Icon } from "@iconify/react";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { Input } from "@/shared/components/agrofy-ui/ui/input";
@@ -34,8 +35,8 @@ const UserFormPage = () => {
   });
   const user = userData?.data?.data;
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateUserRequest>();
-  const role = watch("role");
+  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<CreateUserRequest>();
+  const role = useWatch({ control, name: "role" });
 
   useEffect(() => {
     if (user) {
@@ -52,7 +53,12 @@ const UserFormPage = () => {
 
   const createMutation = useCreateUser({
     onSuccess: () => { toast.success("Pengguna berhasil ditambahkan"); navigate("/users"); },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Gagal menambahkan pengguna"),
+    onError: (err: unknown) => {
+      const message = err instanceof AxiosError
+        ? (err.response?.data as { message?: string } | undefined)?.message
+        : undefined;
+      toast.error(message ?? "Gagal menambahkan pengguna");
+    },
   });
 
   const updateMutation = useUpdateUser({
