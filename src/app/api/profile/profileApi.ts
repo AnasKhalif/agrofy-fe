@@ -1,6 +1,13 @@
 import { apiService } from "@/app/services/apiService";
 import { ResponseApi } from "@/shared/types/api/type";
 
+interface ProfileRoleObject {
+  id?: string | number;
+  name?: string;
+  display_name?: string;
+  permissions?: unknown[];
+}
+
 export interface ProfileData {
   id: number;
   uid: string;
@@ -10,7 +17,7 @@ export interface ProfileData {
   address: string | null;
   date_of_birth: string | null;
   gender: string | null;
-  role: string;
+  role: string | ProfileRoleObject | null;
   created_at: string;
 }
 

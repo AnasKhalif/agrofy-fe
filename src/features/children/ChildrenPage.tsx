@@ -93,6 +93,11 @@ const ChildrenPage = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">{child.name}</h3>
+                    {child.parent?.name && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Orang Tua: <span className="font-medium text-gray-700 dark:text-gray-300">{child.parent.name}</span>
+                      </p>
+                    )}
                     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mt-1 ${genderColor[child.gender]}`}>
                       <Icon icon={genderIcon[child.gender]} width={11} />
                       {child.gender === 'laki-laki' ? 'Laki-laki' : 'Perempuan'}

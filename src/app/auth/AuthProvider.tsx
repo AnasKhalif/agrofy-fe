@@ -1,4 +1,5 @@
 import { useState, useEffect, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { AuthContext, AuthContextType } from "./authContext";
 import { authApi } from "../api/auth/authApi";
 import { useGetProfile } from "../api/auth/useAuthApi";
@@ -16,6 +17,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const queryClient = useQueryClient();
+
   // Initialize user from localStorage to prevent redirect loop
   const [user, setUser] = useState<User | null>(() => {
     const userStr = localStorage.getItem("user");
@@ -49,10 +52,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [profileData]);
 
+  useEffect(() => {
+    if (!authService.getToken()) {
+      queryClient.clear();
+    }
+  }, [queryClient]);
+
   /**
    * Login user
    */
   const login = async (email: string, password: string) => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+
     const [response, error] = await tryCatch(
       authApi.login({ email, password }),
     );
@@ -79,6 +91,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
    * Always clears local auth data even if API call fails
    */
   const logout = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+
     // Clear local state immediately — don't wait for API
     authService.clearAuth();
     setUser(null);

@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useGetChildren } from "@/app/api/child/useChildApi";
 import { useGetStuntingHistory } from "@/app/api/stunting/useStuntingApi";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
@@ -21,6 +23,9 @@ const PERIOD_OPTIONS = [
 
 const monthLabel = (dateString: string) =>
   new Date(dateString).toLocaleDateString("id-ID", { month: "short", year: "2-digit" });
+
+const fullDateLabel = (dateString: string) =>
+  new Date(dateString).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 
 const GrowthReportPage = () => {
   const navigate = useNavigate();
@@ -147,6 +152,77 @@ const GrowthReportPage = () => {
       .sort((a, b) => (b.report?.count ?? 0) - (a.report?.count ?? 0));
   }, [allHistory, children]);
 
+  const exportRows = useMemo(
+    () =>
+      filteredHistory.map((item) => ({
+        tanggal: fullDateLabel(item.measurement_date),
+        anak: item.child?.name ?? "-",
+        usiaBulan: Number(item.age),
+        tinggiCm: Number(item.height).toFixed(1),
+        zScore: Number(item.z_score).toFixed(2),
+        status: item.prediction_label,
+      })),
+    [filteredHistory],
+  );
+
+  const exportFileSuffix = useMemo(() => {
+    const periodLabel = PERIOD_OPTIONS.find((option) => option.value === periodDays)?.label ?? "Semua";
+    return periodLabel.toLowerCase().replace(/\s+/g, "-");
+  }, [periodDays]);
+
+  const handleExportCSV = () => {
+    const headers = ["Tanggal", "Anak", "Usia (bulan)", "Tinggi (cm)", "Z-Score", "Status"];
+    const lines = exportRows.map((row) => [
+      row.tanggal,
+      row.anak,
+      String(row.usiaBulan),
+      row.tinggiCm,
+      row.zScore,
+      row.status,
+    ]);
+
+    const csvContent = [headers, ...lines]
+      .map((line) => line.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `laporan-pertumbuhan-${exportFileSuffix}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    doc.setFontSize(14);
+    doc.text("Laporan Pertumbuhan Anak", 14, 14);
+
+    doc.setFontSize(10);
+    doc.text(`Periode: ${PERIOD_OPTIONS.find((option) => option.value === periodDays)?.label ?? "Semua"}`, 14, 20);
+    doc.text(`Total Anak: ${children.length}`, 14, 25);
+    doc.text(`Total Pengukuran: ${filteredHistory.length}`, 60, 25);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [["Tanggal", "Anak", "Usia (bulan)", "Tinggi (cm)", "Z-Score", "Status"]],
+      body: exportRows.map((row) => [row.tanggal, row.anak, String(row.usiaBulan), row.tinggiCm, row.zScore, row.status]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [1, 82, 234] },
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(`Halaman ${data.pageNumber}/${pageCount}`, data.settings.margin.left, doc.internal.pageSize.getHeight() - 6);
+      },
+    });
+
+    doc.save(`laporan-pertumbuhan-${exportFileSuffix}.pdf`);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -155,6 +231,14 @@ const GrowthReportPage = () => {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Ringkasan status pertumbuhan dan tren pengukuran anak</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="h-8 text-xs" onClick={handleExportCSV} disabled={exportRows.length === 0}>
+            <Icon icon="solar:download-line-duotone" width={14} className="mr-1" />
+            Export CSV
+          </Button>
+          <Button variant="outline" className="h-8 text-xs" onClick={handleExportPDF} disabled={exportRows.length === 0}>
+            <Icon icon="solar:file-text-line-duotone" width={14} className="mr-1" />
+            Export PDF
+          </Button>
           {PERIOD_OPTIONS.map((option) => (
             <button
               key={option.value}

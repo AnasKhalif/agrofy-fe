@@ -9,6 +9,11 @@ export interface ChildItem {
   birth_height: number | null;
   age_in_months: number;
   photo: string | null;
+  parent?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
   created_at: string;
 }
 

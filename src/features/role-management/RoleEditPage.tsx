@@ -198,6 +198,37 @@ const RoleEditPage = () => {
     return new Map(allRoles.map((item) => [item.name, item]));
   }, [allRoles]);
 
+  const rolePermissionsByNormalized = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+
+    allRoles.forEach((item) => {
+      const normalized = normalizeRoleName(item.name);
+
+      if (!map.has(normalized)) {
+        map.set(normalized, new Set<string>());
+      }
+
+      (item.permissions ?? []).forEach((permissionName) => {
+        map.get(normalized)?.add(permissionName);
+      });
+    });
+
+    return map;
+  }, [allRoles]);
+
+  const canonicalRoleKeyByNormalized = useMemo(() => {
+    const map = new Map<string, string>();
+
+    allRoles.forEach((item) => {
+      const normalized = normalizeRoleName(item.name);
+      if (!map.has(normalized)) {
+        map.set(normalized, item.name);
+      }
+    });
+
+    return map;
+  }, [allRoles]);
+
   const roleMenuModules = useMemo(() => {
     return new Map<string, Set<string>>([
       ["superadmin", collectModulesFromSidebar(SuperAdminSidebarContent)],
@@ -439,12 +470,47 @@ const RoleEditPage = () => {
     const normalizedName = normalizeRoleName(displayName);
     const roleName = isEdit ? (role?.name ?? normalizedName) : normalizedName;
 
+    const normalizedRoleName = normalizeRoleName(roleName);
+
+    let effectiveExclusiveRoles = Array.from(selectedExclusiveRoles);
+
+    if (normalizedRoleName === "superadmin") {
+      const selectedRoleSet = new Set(
+        effectiveExclusiveRoles.map((item) => normalizeRoleName(item))
+      );
+      selectedRoleSet.add("superadmin");
+
+      const priorityRoles = ["admin", "dokter", "user"];
+
+      Array.from(selected).forEach((permissionName) => {
+        const alreadyCovered = Array.from(selectedRoleSet).some((roleKey) =>
+          rolePermissionsByNormalized.get(roleKey)?.has(permissionName)
+        );
+
+        if (alreadyCovered) {
+          return;
+        }
+
+        const inferredRole = priorityRoles.find((roleKey) =>
+          rolePermissionsByNormalized.get(roleKey)?.has(permissionName)
+        );
+
+        if (inferredRole) {
+          selectedRoleSet.add(inferredRole);
+        }
+      });
+
+      effectiveExclusiveRoles = Array.from(selectedRoleSet)
+        .map((roleKey) => canonicalRoleKeyByNormalized.get(roleKey) ?? roleKey)
+        .filter((roleKey) => roleByName.has(roleKey));
+    }
+
     const payload = {
       display_name: displayName,
       name: roleName,
       description,
       permissions: Array.from(selected),
-      exclusive_roles: Array.from(selectedExclusiveRoles),
+      exclusive_roles: effectiveExclusiveRoles,
     };
     if (isEdit) updateMutation.mutate({ id: parseInt(id!), data: payload });
     else createMutation.mutate(payload);

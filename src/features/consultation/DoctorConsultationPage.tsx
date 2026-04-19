@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetConsultations } from "@/app/api/consultation/useConsultationApi";
 import { Badge } from "@/shared/components/agrofy-ui/ui/badge";
@@ -19,13 +20,26 @@ const statusLabel = {
 };
 
 const DoctorConsultationPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeStatus, setActiveStatus] = useState<string>("all");
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
+  const selectedConsultationId = Number(searchParams.get("consultation_id") ?? 0);
 
   const { data, isLoading, refetch } = useGetConsultations(
     activeStatus !== "all" ? { status: activeStatus } : undefined
   );
   const consultations = data?.data?.data ?? [];
+
+  useEffect(() => {
+    if (!selectedConsultationId || selectedConsultation) {
+      return;
+    }
+
+    const consultation = consultations.find((item) => item.id === selectedConsultationId);
+    if (consultation) {
+      setSelectedConsultation(consultation);
+    }
+  }, [consultations, selectedConsultation, selectedConsultationId]);
 
   const pending = consultations.filter((c) => c.status === "pending").length;
   const ongoing = consultations.filter((c) => c.status === "ongoing").length;
@@ -41,7 +55,12 @@ const DoctorConsultationPage = () => {
       <div className="h-[calc(100vh-64px)] flex flex-col">
         <ChatRoom
           consultation={selectedConsultation}
-          onBack={() => { setSelectedConsultation(null); refetch(); }}
+          onBack={() => {
+            setSelectedConsultation(null);
+            searchParams.delete("consultation_id");
+            setSearchParams(searchParams, { replace: true });
+            refetch();
+          }}
           onStatusChange={handleStatusChange}
         />
       </div>

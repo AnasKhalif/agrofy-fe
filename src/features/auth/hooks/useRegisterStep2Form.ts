@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +28,7 @@ export const useRegisterStep2Form = () => {
   const queryClient = useQueryClient();
   const toast = useToast();
   const loading = useBoolean();
+  const hasValidatedStep1Ref = useRef(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isValidating, setIsValidating] = useState<boolean>(true);
 
@@ -46,6 +47,11 @@ export const useRegisterStep2Form = () => {
   });
 
   useEffect(() => {
+    if (hasValidatedStep1Ref.current) {
+      return;
+    }
+
+    hasValidatedStep1Ref.current = true;
     const step1Data = getEncryptedItem<RegisterStep1Data>(STORAGE_KEY);
     if (!step1Data) {
       toast.error("Silakan isi data langkah 1 terlebih dahulu");

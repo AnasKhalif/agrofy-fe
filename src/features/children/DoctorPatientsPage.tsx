@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { useGetChildren } from "@/app/api/child/useChildApi";
+import { useGetConsultations } from "@/app/api/consultation/useConsultationApi";
 import { Input } from "@/shared/components/agrofy-ui/ui/input";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { ROUTES } from "@/app/constants/router";
@@ -14,15 +15,35 @@ const DoctorPatientsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useGetChildren();
-  const children = data?.data?.data;
+  const { data, isLoading: isLoadingChildren } = useGetChildren();
+  const { data: consultationData, isLoading: isLoadingConsultations } = useGetConsultations();
+  const children = data?.data?.data ?? [];
+  const consultations = consultationData?.data?.data ?? [];
+
+  const latestConsultationByChildId = useMemo(() => {
+    const latestMap = new Map<number, number>();
+    consultations.forEach((consultation) => {
+      if (!consultation.child_id || latestMap.has(consultation.child_id)) {
+        return;
+      }
+
+      latestMap.set(consultation.child_id, consultation.id);
+    });
+    return latestMap;
+  }, [consultations]);
 
   const filteredChildren = useMemo(() => {
-    const source = children ?? [];
+    const source = children.filter((child) => latestConsultationByChildId.has(child.id));
     if (!search.trim()) return source;
     const keyword = search.toLowerCase();
-    return source.filter((child) => child.name.toLowerCase().includes(keyword));
-  }, [children, search]);
+    return source.filter((child) => {
+      const childName = child.name.toLowerCase().includes(keyword);
+      const parentName = child.parent?.name?.toLowerCase().includes(keyword) ?? false;
+      return childName || parentName;
+    });
+  }, [children, latestConsultationByChildId, search]);
+
+  const isLoading = isLoadingChildren || isLoadingConsultations;
 
   return (
     <div className="p-6 space-y-5">
@@ -37,7 +58,7 @@ const DoctorPatientsPage = () => {
         <div className="relative w-full max-w-sm">
           <Icon icon="solar:magnifer-outline" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width={16} />
           <Input
-            placeholder="Cari nama anak..."
+            placeholder="Cari nama anak / orang tua..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -71,6 +92,11 @@ const DoctorPatientsPage = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">{child.name}</h3>
+                  {child.parent?.name && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Orang Tua: <span className="font-medium text-gray-700 dark:text-gray-300">{child.parent.name}</span>
+                    </p>
+                  )}
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mt-1 ${genderColor[child.gender]}`}>
                     <Icon icon={genderIcon[child.gender]} width={11} />
                     {child.gender === "laki-laki" ? "Laki-laki" : "Perempuan"}
@@ -107,7 +133,13 @@ const DoctorPatientsPage = () => {
                 <Button
                   size="sm"
                   className="flex-1 text-xs bg-[#0152EA] hover:bg-blue-700 text-white"
-                  onClick={() => navigate(ROUTES.DOCTOR.CONSULTATION)}
+                  onClick={() => {
+                    const consultationId = latestConsultationByChildId.get(child.id);
+                    if (consultationId) {
+                      navigate(`${ROUTES.DOCTOR.CONSULTATION}?consultation_id=${consultationId}`);
+                    }
+                  }}
+                  disabled={!latestConsultationByChildId.has(child.id)}
                 >
                   <Icon icon="solar:chat-round-dots-outline" className="mr-1" width={13} /> Konsultasi
                 </Button>

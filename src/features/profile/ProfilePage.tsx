@@ -13,12 +13,33 @@ const ROLE_LABEL: Record<string, string> = {
   superadmin: 'Super Admin', admin: 'Admin', dokter: 'Dokter', user: 'Orang Tua', orang_tua: 'Orang Tua',
 };
 
+const getRoleInfo = (role: unknown): { key: string; label: string } => {
+  if (!role) {
+    return { key: "", label: "User" };
+  }
+
+  if (typeof role === "string") {
+    const key = role.toLowerCase();
+    return { key, label: ROLE_LABEL[key] ?? role };
+  }
+
+  if (typeof role === "object") {
+    const roleObj = role as { name?: string; display_name?: string; label?: string };
+    const key = (roleObj.name ?? "").toLowerCase();
+    const label = roleObj.display_name ?? roleObj.label ?? ROLE_LABEL[key] ?? roleObj.name ?? "User";
+    return { key, label };
+  }
+
+  return { key: "", label: "User" };
+};
+
 const ProfilePage = () => {
   const toast = useToast();
   const [tab, setTab] = useState<'profile' | 'password'>('profile');
 
   const { data: profileData, isLoading } = useGetProfile();
   const profile = profileData?.data?.data;
+  const roleInfo = getRoleInfo(profile?.role);
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<UpdateProfileRequest>();
   const gender = watch("gender");
@@ -68,7 +89,7 @@ const ProfilePage = () => {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">{profile?.name}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{profile?.email}</p>
           <span className="inline-block mt-1.5 text-xs px-2.5 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-            {ROLE_LABEL[profile?.role ?? ''] ?? profile?.role ?? 'User'}
+            {roleInfo.label}
           </span>
         </div>
       </div>
