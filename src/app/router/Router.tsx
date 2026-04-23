@@ -74,7 +74,7 @@ const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
 
 // Food
 const FoodRecommendationPage = lazy(() => import("@/features/food/FoodRecommendationPage"));
-const SystemLogPage = lazy(() => import("@/features/logs/SystemLogPage"));
+const SystemLogPage = lazy(() => Promise.resolve({ default: () => null }));
 
 const router = createBrowserRouter([
   {
