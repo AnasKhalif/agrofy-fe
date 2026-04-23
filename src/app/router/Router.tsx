@@ -349,6 +349,6 @@ const router = createBrowserRouter([
     path: "*",
     element: <div className="flex items-center justify-center h-screen text-gray-400">404 - Halaman tidak ditemukan</div>,
   },
-]);
+], { basename: "/app" });
 
 export default router;
