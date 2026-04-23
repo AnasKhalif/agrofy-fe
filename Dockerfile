@@ -10,7 +10,7 @@ RUN npm ci --frozen-lockfile
 COPY . .
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-RUN npm run build
+RUN npx vite build
 
 # Production stage — serve with nginx
 FROM nginx:alpine
