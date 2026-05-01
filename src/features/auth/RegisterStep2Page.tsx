@@ -1,16 +1,17 @@
 import { Link } from "react-router";
 import AuthRegister2 from "./components/forms/AuthRegister2";
 import LeftSidebarPart from "./components/LeftSidebarPart";
-import Bgimg from "@/assets/images/backgrounds/auth-bg.png";
+import { useRotatingBackground } from "./hooks/useRotatingBackground";
 
 const RegisterStep2Page = () => {
+  const bg = useRotatingBackground();
   return (
     <>
       <div className="relative overflow-hidden h-screen">
         <div
-          className="grid grid-cols-12 gap-3 h-full"
+          className="grid grid-cols-12 gap-3 h-full transition-[background-image] duration-700 ease-in-out"
           style={{
-            backgroundImage: `url(${Bgimg})`,
+            backgroundImage: `url(${bg})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
