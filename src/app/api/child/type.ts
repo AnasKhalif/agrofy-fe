@@ -7,6 +7,7 @@ export interface ChildItem {
   date_of_birth: string;
   birth_weight: number | null;
   birth_height: number | null;
+  asi_eksklusif: boolean | null;
   age_in_months: number;
   photo: string | null;
   parent?: {
@@ -23,6 +24,7 @@ export interface CreateChildRequest {
   date_of_birth: string;
   birth_weight?: number;
   birth_height?: number;
+  asi_eksklusif?: boolean;
 }
 
 export type UpdateChildRequest = Partial<CreateChildRequest>;

@@ -67,6 +67,7 @@ const ChildFormPage = lazy(() => import("@/features/children/ChildFormPage"));
 const StuntingDetectionPage = lazy(() => import("@/features/stunting/StuntingDetectionPage"));
 const DetectionHistoryPage = lazy(() => import("@/features/stunting/DetectionHistoryPage"));
 const MonitoringPage = lazy(() => import("@/features/stunting/MonitoringPage"));
+const VaccinationPage = lazy(() => import("@/features/vaccination/VaccinationPage"));
 const GrowthReportPage = lazy(() => import("@/features/reports/GrowthReportPage"));
 
 // Profile
@@ -158,6 +159,22 @@ const router = createBrowserRouter([
         element: (
           <PermissionRoute permissions={[PERMISSIONS.MONITORING_READ]}>
             <MonitoringPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.PARENT.VACCINATION,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.VACCINATIONS_READ]}>
+            <VaccinationPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: ROUTES.DOCTOR.VACCINATION,
+        element: (
+          <PermissionRoute permissions={[PERMISSIONS.VACCINATIONS_READ]}>
+            <VaccinationPage />
           </PermissionRoute>
         ),
       },

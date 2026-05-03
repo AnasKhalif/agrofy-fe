@@ -40,6 +40,11 @@ export const PERMISSIONS = {
   STUNTING_CREATE: "stunting-create",
   MONITORING_READ: "monitoring-read",
 
+  VACCINATIONS_READ: "vaccinations-read",
+  VACCINATIONS_CREATE: "vaccinations-create",
+  VACCINATIONS_UPDATE: "vaccinations-update",
+  VACCINATIONS_DELETE: "vaccinations-delete",
+
   CONSULTATIONS_READ: "consultations-read",
   CONSULTATIONS_CREATE: "consultations-create",
   CONSULTATIONS_UPDATE: "consultations-update",

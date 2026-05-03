@@ -311,8 +311,19 @@ const StuntingDetectionPage = () => {
                 {errors.height && <p className="text-xs text-red-500">{errors.height.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Berat Badan (kg)</Label>
-                <Input type="number" step="0.1" placeholder="Contoh: 8.5" {...register("weight", { valueAsNumber: true })} />
+                <Label>Berat Badan (kg) <span className="text-red-500">*</span></Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  placeholder="Contoh: 8.5"
+                  {...register("weight", {
+                    required: "Berat badan wajib diisi",
+                    valueAsNumber: true,
+                    min: { value: 1, message: "Min 1 kg" },
+                    max: { value: 50, message: "Max 50 kg" },
+                  })}
+                />
+                {errors.weight && <p className="text-xs text-red-500">{errors.weight.message}</p>}
               </div>
             </div>
 

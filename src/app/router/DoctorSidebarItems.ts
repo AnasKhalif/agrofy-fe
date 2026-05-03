@@ -47,6 +47,13 @@ const DoctorSidebarContent: MenuItem[] = [
             url: ROUTES.DOCTOR.MONITORING,
             permission: PERMISSIONS.MONITORING_READ,
           },
+          {
+            name: "Imunisasi Pasien",
+            icon: "solar:syringe-outline",
+            id: "doctor-vaccination",
+            url: ROUTES.DOCTOR.VACCINATION,
+            permission: PERMISSIONS.VACCINATIONS_READ,
+          },
         ],
       },
       {

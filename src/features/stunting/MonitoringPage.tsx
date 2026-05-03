@@ -3,10 +3,11 @@ import { useSearchParams, useNavigate } from "react-router";
 import { Icon } from "@iconify/react";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useGetChildren } from "@/app/api/child/useChildApi";
-import { useGetStuntingHistory } from "@/app/api/stunting/useStuntingApi";
+import { useGetStuntingHistory, useGetWfaCurve } from "@/app/api/stunting/useStuntingApi";
 import type { StuntingResult } from "@/app/api/stunting/type";
 import { Button } from "@/shared/components/agrofy-ui/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/agrofy-ui/ui/select";
+import KmsWfaChart from "./components/KmsWfaChart";
 
 const STATUS_COLORS: Record<string, string> = {
   'severely stunted': 'text-red-600 bg-red-100',
@@ -92,15 +93,39 @@ const MonitoringPage = () => {
   const history = normalizeHistory(historyData?.data?.data);
 
   const selectedChild = sortedChildren.find(c => c.id.toString() === selectedChildId);
-  const chartData = [...history].sort((a, b) => new Date(a.measurement_date).getTime() - new Date(b.measurement_date).getTime());
+
+  const { data: wfaCurveData } = useGetWfaCurve(selectedChild?.gender);
+  const wfaCurve = wfaCurveData?.data?.data?.curve ?? [];
+
+  const latestMeasurement = useMemo(() => {
+    if (!history.length) return null;
+    return [...history].sort(
+      (a, b) => new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime()
+        || b.id - a.id,
+    )[0];
+  }, [history]);
+  // Dedup per usia bulan: 1 titik per bulan (yang terbaru), supaya grafik konsisten
+  // dengan kurva KMS dan tidak zigzag jika ada pengukuran ganda di bulan yang sama.
+  const chartData = useMemo(() => {
+    const byAge = new Map<number, StuntingResult>();
+    history.forEach(h => {
+      const existing = byAge.get(h.age);
+      if (!existing || new Date(h.measurement_date).getTime() > new Date(existing.measurement_date).getTime()) {
+        byAge.set(h.age, h);
+      }
+    });
+    return Array.from(byAge.values()).sort(
+      (a, b) => new Date(a.measurement_date).getTime() - new Date(b.measurement_date).getTime(),
+    );
+  }, [history]);
 
   // Pad to at least 2 points for LineChart (duplicate if only 1)
   const padded = chartData.length === 1 ? [chartData[0], chartData[0]] : chartData;
 
   const dateLabels = padded.map((d, i) =>
     padded.length === 2 && chartData.length === 1
-      ? (i === 0 ? '' : new Date(d.measurement_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" }))
-      : new Date(d.measurement_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })
+      ? (i === 0 ? '' : new Date(d.measurement_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }))
+      : new Date(d.measurement_date).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" })
   );
   const heightSeries = padded.map(d => Number(d.height));
   const zScoreSeries = chartData.map(d => Number(d.z_score));
@@ -171,10 +196,23 @@ const MonitoringPage = () => {
               </div>
               <div className="ml-auto text-right">
                 <p className="text-xs text-gray-400">Status Terakhir</p>
-                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[history[0]?.prediction_result] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {history[0]?.prediction_label ?? '-'}
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[latestMeasurement?.prediction_result ?? ''] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {latestMeasurement?.prediction_label ?? '-'}
                 </span>
               </div>
+            </div>
+          )}
+
+          {/* Kurva KMS BB/U (Buku KIA) */}
+          {selectedChild && wfaCurve.length > 0 && (
+            <div className="bg-white dark:bg-darkgray rounded-xl border border-gray-200 dark:border-darkborder p-5">
+              <KmsWfaChart
+                curve={wfaCurve}
+                history={history}
+                gender={selectedChild.gender}
+                childName={selectedChild.name}
+                asiEksklusif={selectedChild.asi_eksklusif}
+              />
             </div>
           )}
 

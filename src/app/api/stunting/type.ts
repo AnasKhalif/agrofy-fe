@@ -8,6 +8,7 @@ export interface StuntingResult {
   weight: number | null;
   measurement_date: string;
   z_score: number;
+  z_score_wfa?: number | null;
   prediction_result: 'severely stunted' | 'stunted' | 'normal' | 'tinggi';
   prediction_label: string;
   notes: string | null;
@@ -15,6 +16,7 @@ export interface StuntingResult {
   advice?: StuntingAdvice;
   foods?: FoodSuggestion[];
   who_ref?: WhoReference;
+  who_wfa_ref?: WhoReference;
 }
 
 export interface StuntingAdvice {
@@ -44,7 +46,7 @@ export interface WhoReference {
 export interface DetectRequest {
   child_id: number;
   height: number;
-  weight?: number;
+  weight: number;
   measurement_date: string;
   notes?: string;
 }
@@ -54,7 +56,25 @@ export interface DetectResponse {
   child: { id: number; name: string; gender: string };
   age_months: number;
   z_score: number;
+  z_score_wfa: number;
   who_ref: WhoReference;
+  who_wfa_ref: WhoReference;
   advice: StuntingAdvice;
   foods: FoodSuggestion[];
+}
+
+export interface WfaCurvePoint {
+  age: number;
+  SD3neg: number;
+  SD2neg: number;
+  SD1neg: number;
+  median: number;
+  SD1: number;
+  SD2: number;
+  SD3: number;
+}
+
+export interface WfaCurveResponse {
+  gender: 'laki-laki' | 'perempuan';
+  curve: WfaCurvePoint[];
 }

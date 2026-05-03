@@ -61,6 +61,18 @@ const StuntingParentSidebarContent: MenuItem[] = [
         ],
       },
       {
+        heading: "IMUNISASI",
+        children: [
+          {
+            name: "Jadwal & Catatan Imunisasi",
+            icon: "solar:syringe-outline",
+            id: "parent-vaccination",
+            url: "/vaccination",
+            permission: PERMISSIONS.VACCINATIONS_READ,
+          },
+        ],
+      },
+      {
         heading: "KONSULTASI",
         children: [
           {

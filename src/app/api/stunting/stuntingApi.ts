@@ -1,6 +1,6 @@
 import { apiService } from "@/app/services/apiService";
 import { ResponseApi } from "@/shared/types/api/type";
-import type { DetectRequest, DetectResponse, StuntingResult } from "./type";
+import type { DetectRequest, DetectResponse, StuntingResult, WfaCurveResponse } from "./type";
 
 export const stuntingApi = {
   detect: (data: DetectRequest) =>
@@ -11,4 +11,7 @@ export const stuntingApi = {
 
   getById: (id: number) =>
     apiService.get<ResponseApi<StuntingResult>>(`/api/v1/stunting/history/${id}`),
+
+  getWfaCurve: (gender: 'laki-laki' | 'perempuan') =>
+    apiService.get<ResponseApi<WfaCurveResponse>>("/api/v1/stunting/wfa-curve", { gender }),
 };

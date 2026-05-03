@@ -21,6 +21,7 @@ const ChildFormPage = () => {
 
   const { register, handleSubmit, setValue, control, reset, formState: { errors } } = useForm<CreateChildRequest>();
   const gender = useWatch({ control, name: "gender" });
+  const asiEksklusif = useWatch({ control, name: "asi_eksklusif" });
 
   useEffect(() => {
     if (child && isEdit) {
@@ -30,6 +31,7 @@ const ChildFormPage = () => {
         date_of_birth: child.date_of_birth,
         birth_weight: child.birth_weight ?? undefined,
         birth_height: child.birth_height ?? undefined,
+        asi_eksklusif: child.asi_eksklusif ?? false,
       });
     }
   }, [child, isEdit, reset]);
@@ -107,6 +109,19 @@ const ChildFormPage = () => {
               <Input type="number" step="0.1" placeholder="Contoh: 50" {...register("birth_height", { valueAsNumber: true })} />
             </div>
           </div>
+
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-darkborder cursor-pointer hover:bg-gray-50 dark:hover:bg-darkminisidebar">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-[#0152EA] focus:ring-[#0152EA]"
+              checked={!!asiEksklusif}
+              onChange={(e) => setValue("asi_eksklusif", e.target.checked)}
+            />
+            <div className="text-sm">
+              <p className="font-medium text-gray-900 dark:text-white">ASI Eksklusif</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Anak mendapat ASI Eksklusif (tanpa makanan/minuman lain) selama 0–6 bulan, sesuai standar Buku KIA & WHO.</p>
+            </div>
+          </label>
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => navigate("/children")} className="flex-1">Batal</Button>
